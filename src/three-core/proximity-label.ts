@@ -2,13 +2,14 @@ import * as THREE from "three";
 import type { KanjiNode } from "../shared/types";
 import { WORLD_SCALE } from "./points";
 
-const WORLD_THRESHOLD  = 1.2;   // world units
-const SCREEN_THRESHOLD = 0.25;  // NDC distance from center（-1〜1 の空間）
-const ZOOM_OUT_MAX     = 2.5;   // camera が原点からこの距離より遠いとき全非表示
-const MAX_LABELS       = 8;     // 同時表示数
-const SIZE_FACTOR      = 30;    // px·units（fontSize = SIZE_FACTOR / worldDist）
-const MIN_FONT_PX      = 14;
-const MAX_FONT_PX      = 110;
+// カメラ距離がこれ以下になると漢字表示開始（フェードイン開始）
+const LABEL_NEAR = 1.5;
+// カメラ距離がこれ以上だと非表示
+const LABEL_FAR  = 2.5;
+
+const SIZE_FACTOR = 30;   // px·units（fontSize = SIZE_FACTOR / worldDist）
+const MIN_FONT_PX = 8;
+const MAX_FONT_PX = 110;
 
 export interface ProximityLabel {
   update(dt: number): void;
@@ -19,46 +20,37 @@ export function createProximityLabel(
   camera: THREE.Camera,
   nodes: KanjiNode[],
 ): ProximityLabel {
-  // ── 要素プール作成（#proximity-label を親コンテナとして使う）──
-  const container = document.getElementById("proximity-label")!;
-  container.innerHTML = "";
+  const canvas = document.getElementById("proximity-label") as HTMLCanvasElement;
+  const ctx = canvas.getContext("2d")!;
 
-  const pool = Array.from({ length: MAX_LABELS }, () => {
-    const item    = document.createElement("div");
-    item.className = "pl-item";
-    const kanji   = document.createElement("div");
-    kanji.className = "pl-kanji";
-    const meaning = document.createElement("div");
-    meaning.className = "pl-meaning";
-    item.append(kanji, meaning);
-    container.appendChild(item);
-    return { el: item, kanji, meaning };
-  });
-
-  // ── top-N を GCゼロで管理する scratch 領域 ──
-  // 挿入ソートで常にスコア昇順を維持する
-  const topScore  = new Float32Array(MAX_LABELS).fill(Infinity);
-  const topWDist  = new Float32Array(MAX_LABELS);
-  const topNdcX   = new Float32Array(MAX_LABELS);
-  const topNdcY   = new Float32Array(MAX_LABELS);
-  const topNodes: (KanjiNode | null)[] = new Array(MAX_LABELS).fill(null);
-  let topCount = 0;
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
 
   const nodePos   = new THREE.Vector3();
   const screenPos = new THREE.Vector3();
 
   function update(_dt: number) {
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const camDist = camera.position.length();
+
     // ズームアウト時は全非表示
-    if (camera.position.length() > ZOOM_OUT_MAX) {
-      for (const p of pool) p.el.style.opacity = "0";
-      return;
-    }
+    if (camDist >= LABEL_FAR) return;
 
-    // ── top-N リセット ──
-    topCount = 0;
-    topScore.fill(Infinity);
+    // labelAlpha: LABEL_FAR → 0, LABEL_NEAR以下 → 1
+    const labelAlpha = Math.min(1, Math.max(0,
+      (LABEL_FAR - camDist) / (LABEL_FAR - LABEL_NEAR),
+    ));
 
-    // ── 全ノードをスコアリングして top-N を更新 ──
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "middle";
+
     for (const node of nodes) {
       nodePos.set(
         (node.x - 0.5) * WORLD_SCALE,
@@ -66,67 +58,40 @@ export function createProximityLabel(
         node.z !== undefined ? (node.z - 0.5) * WORLD_SCALE : 0,
       );
 
-      const worldDist  = camera.position.distanceTo(nodePos);
-      const worldScore = worldDist / WORLD_THRESHOLD;
+      const worldDist = camera.position.distanceTo(nodePos);
 
       screenPos.copy(nodePos).project(camera);
-      const screenScore = screenPos.z > 1
-        ? Infinity
-        : Math.sqrt(screenPos.x * screenPos.x + screenPos.y * screenPos.y) / SCREEN_THRESHOLD;
 
-      const score = Math.min(worldScore, screenScore);
-      if (score >= 1.0) continue;
+      // カメラ後方 or 画面外はスキップ
+      if (screenPos.z > 1) continue;
+      if (Math.abs(screenPos.x) > 1.1 || Math.abs(screenPos.y) > 1.1) continue;
 
-      // 挿入ソート: スコアが worst より良ければ差し込む
-      if (topCount < MAX_LABELS || score < topScore[topCount - 1]) {
-        // 挿入位置を探す
-        let pos = topCount < MAX_LABELS ? topCount : MAX_LABELS - 1;
-        for (let j = 0; j < (topCount < MAX_LABELS ? topCount : MAX_LABELS - 1); j++) {
-          if (score < topScore[j]) { pos = j; break; }
-        }
-        // pos 以降を右にシフト
-        const end = Math.min(topCount, MAX_LABELS - 1);
-        for (let j = end; j > pos; j--) {
-          topScore[j] = topScore[j - 1];
-          topWDist[j] = topWDist[j - 1];
-          topNdcX[j]  = topNdcX[j - 1];
-          topNdcY[j]  = topNdcY[j - 1];
-          topNodes[j] = topNodes[j - 1];
-        }
-        topScore[pos] = score;
-        topWDist[pos] = worldDist;
-        topNdcX[pos]  = screenPos.x;
-        topNdcY[pos]  = screenPos.y;
-        topNodes[pos] = node;
-        if (topCount < MAX_LABELS) topCount++;
-      }
+      const x = ( screenPos.x * 0.5 + 0.5) * w;
+      const y = (-screenPos.y * 0.5 + 0.5) * h;
+
+      const fontSize = Math.min(MAX_FONT_PX, Math.max(MIN_FONT_PX, SIZE_FACTOR / worldDist));
+
+      ctx.font = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
+
+      const color    = node.t === 0 ? "#dce6ff" : "#ffd98e";
+      const glowCol  = node.t === 0 ? "rgba(150,170,255,0.8)" : "rgba(255,200,100,0.8)";
+
+      ctx.globalAlpha  = labelAlpha * 0.9;
+      ctx.shadowColor  = glowCol;
+      ctx.shadowBlur   = fontSize * 0.5;
+      ctx.fillStyle    = color;
+      ctx.fillText(node.k, x, y);
     }
 
-    // ── プール要素を更新 ──
-    for (let i = 0; i < MAX_LABELS; i++) {
-      const p = pool[i];
-      const node = topNodes[i];
-      if (i >= topCount || node === null) {
-        p.el.style.opacity = "0";
-        continue;
-      }
-
-      const opacity  = Math.max(0, 1 - topScore[i]);
-      const fontSize = Math.min(MAX_FONT_PX, Math.max(MIN_FONT_PX, SIZE_FACTOR / topWDist[i]));
-      const x = (topNdcX[i] *  0.5 + 0.5) * window.innerWidth;
-      const y = (topNdcY[i] * -0.5 + 0.5) * window.innerHeight;
-
-      p.kanji.textContent       = node.k;
-      p.meaning.textContent     = node.m[0] ?? "";
-      p.kanji.style.fontSize    = `${fontSize}px`;
-      p.el.style.opacity        = String(opacity);
-      p.el.style.left           = `${x}px`;
-      p.el.style.top            = `${y}px`;
-    }
+    ctx.shadowBlur  = 0;
+    ctx.globalAlpha = 1;
   }
 
   return {
     update,
-    dispose() { container.innerHTML = ""; },
+    dispose() {
+      window.removeEventListener("resize", resize);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    },
   };
 }
