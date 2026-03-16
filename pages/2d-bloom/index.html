@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kanji-Verse — Bloom (Canvas 2D + KDE)</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: #05050f;
+        color: #e0e4ff;
+        font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+        overflow: hidden; height: 100dvh; width: 100dvw;
+      }
+      #canvas { display: block; cursor: grab; }
+      #canvas.dragging { cursor: grabbing; }
+
+      #search-bar {
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(10, 10, 30, 0.85);
+        border: 1px solid rgba(120, 140, 255, 0.3);
+        border-radius: 24px; padding: 8px 16px;
+        backdrop-filter: blur(8px); z-index: 10;
+      }
+      #search-input {
+        background: none; border: none; outline: none;
+        color: #e0e4ff; font-size: 18px; width: 80px;
+        text-align: center; font-family: inherit;
+      }
+      #search-input::placeholder { color: rgba(180, 190, 255, 0.4); }
+
+      #filter-bar {
+        position: fixed; top: 20px; right: 20px;
+        display: flex; flex-direction: column; gap: 8px; z-index: 10;
+      }
+      .filter-btn {
+        background: rgba(10, 10, 30, 0.85);
+        border: 1px solid rgba(120, 140, 255, 0.3);
+        border-radius: 12px; padding: 6px 12px;
+        color: #e0e4ff; font-size: 12px; cursor: pointer;
+        backdrop-filter: blur(8px);
+        transition: border-color 0.2s, background 0.2s;
+        font-family: inherit; display: flex; align-items: center; gap: 6px;
+      }
+      .filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .filter-btn.active { border-color: rgba(180, 200, 255, 0.7); }
+      .filter-btn.inactive { opacity: 0.45; }
+
+      #detail-panel {
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+        background: rgba(8, 8, 28, 0.92);
+        border: 1px solid rgba(120, 140, 255, 0.35);
+        border-radius: 16px; padding: 20px 28px;
+        backdrop-filter: blur(12px); z-index: 10;
+        min-width: 280px; max-width: 480px; display: none;
+      }
+      #detail-panel.visible { display: block; }
+      #detail-kanji { font-size: 64px; line-height: 1; text-align: center; margin-bottom: 12px; letter-spacing: -2px; }
+      #detail-type { text-align: center; font-size: 11px; margin-bottom: 12px; opacity: 0.6; letter-spacing: 0.05em; }
+      #detail-readings { display: flex; justify-content: center; gap: 16px; margin-bottom: 10px; font-size: 13px; }
+      .reading-group { text-align: center; }
+      .reading-label { font-size: 10px; opacity: 0.45; letter-spacing: 0.08em; margin-bottom: 2px; }
+      .reading-value { color: rgba(220, 225, 255, 0.9); }
+      #detail-meanings { font-size: 13px; color: rgba(200, 210, 255, 0.85); text-align: center; line-height: 1.8; border-top: 1px solid rgba(120, 140, 255, 0.15); padding-top: 10px; }
+      #detail-close { position: absolute; top: 10px; right: 14px; background: none; border: none; color: rgba(180, 190, 255, 0.5); font-size: 18px; cursor: pointer; font-family: inherit; }
+
+      #loading {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 16px;
+        font-size: 14px; color: rgba(180, 190, 255, 0.6); z-index: 100;
+      }
+      #loading-spinner {
+        width: 32px; height: 32px;
+        border: 2px solid rgba(120, 140, 255, 0.2);
+        border-top-color: rgba(120, 140, 255, 0.8);
+        border-radius: 50%; animation: spin 1s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      #zoom-hint { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: rgba(180, 190, 255, 0.3); z-index: 10; line-height: 1.8; text-align: right; }
+    </style>
+  </head>
+  <body>
+    <div id="loading">
+      <div id="loading-spinner"></div>
+      <span>Loading Kanji-Verse...</span>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="search-bar">
+      <input id="search-input" type="text" placeholder="Enter one kanji" maxlength="1" autocomplete="off" />
+    </div>
+
+    <div id="filter-bar">
+      <button class="filter-btn active" data-type="joyo">
+        <span class="dot" style="background:#c8d4ff"></span>Jōyō
+      </button>
+      <button class="filter-btn active" data-type="jinmei">
+        <span class="dot" style="background:#ffd98e"></span>Jinmei
+      </button>
+    </div>
+
+    <div id="detail-panel">
+      <button id="detail-close">×</button>
+      <div id="detail-kanji"></div>
+      <div id="detail-type"></div>
+      <div id="detail-readings">
+        <div class="reading-group">
+          <div class="reading-label">ON'YOMI</div>
+          <div class="reading-value" id="detail-on"></div>
+        </div>
+        <div class="reading-group">
+          <div class="reading-label">KUN'YOMI</div>
+          <div class="reading-value" id="detail-kun"></div>
+        </div>
+      </div>
+      <div id="detail-meanings"></div>
+    </div>
+
+    <div id="zoom-hint">Scroll: zoom<br>Drag: pan</div>
+
+    <script type="module" src="/src/bloom/main.ts"></script>
+  </body>
+</html>

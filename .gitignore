@@ -1,0 +1,23 @@
+# ── Node.js ──────────────────────────────
+node_modules/
+dist/
+
+# ── TypeScript コンパイル成果物 ────────────
+# tsc は noEmit: true のため通常は生成されないが、念のため除外
+src/**/*.js
+
+# ── Vite キャッシュ ───────────────────────
+*.timestamp-*.mjs
+
+# ── Python / uv ──────────────────────────
+scripts/.venv/
+__pycache__/
+*.pyc
+
+# ── 生成・キャッシュ ──────────────────────
+# KanjiDic2 ダウンロードキャッシュ（再実行で取得可能）
+scripts/kanjidic2.xml.gz
+
+# ── OS ───────────────────────────────────
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(npm --version)",
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(nvm use:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\(''/mnt/c/Users/ryosuke/programs/js/kanji-verse/public/data/kanji-2d.json''\\)\\); print\\(f''entries: {len\\(d\\)}''\\); print\\(''keys:'', list\\(d[0].keys\\(\\)\\) if d else ''empty''\\)\")",
+      "Bash(python3 -c \":*)",
+      "Bash(find /mnt/c/Users/ryosuke/programs/js/kanji-verse/src/three-core -type f -name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx)",
+      "Bash(find /mnt/c/Users/ryosuke/programs/js/kanji-verse/context -type f -name *.md)",
+      "Bash(nvm list:*)",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(grep -rn \"from.*/src/main\\\\|from.*/src/renderer\\\\|from.*/src/romanize\" /mnt/c/Users/ryosuke/programs/js/kanji-verse/ --include=*.ts --include=*.html)"
+    ]
+  }
+}
