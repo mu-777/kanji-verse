@@ -250,8 +250,8 @@ export class BloomRenderer {
         alpha = 1; bloomRadius = r * 3.5; bloomAlpha = 0.3;
       } else {
         r = (nodeScreenR / scale) * twSize;
-        alpha = 0.4 + 0.6 * twAlpha;
-        bloomRadius = r * 2.5; bloomAlpha = 0.12 + 0.08 * twAlpha;
+        alpha = (0.4 + 0.6 * twAlpha) * (1 - labelAlpha);
+        bloomRadius = r * 2.5; bloomAlpha = (0.12 + 0.08 * twAlpha) * (1 - labelAlpha);
       }
 
       // shadowBlur bloom（スクリーン座標系に合わせてスケール補正）

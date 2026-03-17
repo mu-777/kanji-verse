@@ -182,7 +182,7 @@ export class KanjiRenderer {
       if (isSearch)        { r = selectedScreenR / scale; color = COLOR_SEARCH;   alpha = 1; }
       else if (isSelected) { r = selectedScreenR / scale; color = COLOR_SELECTED; alpha = 1; }
       else if (isHovered)  { r = hoverScreenR    / scale;                         alpha = 1; }
-      else                 { r = nodeScreenR     / scale; }
+      else                 { r = nodeScreenR     / scale; alpha *= (1 - labelAlpha); }
 
       ctx.globalAlpha = alpha;
       ctx.beginPath();
