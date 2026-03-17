@@ -16,6 +16,13 @@ export interface ProximityLabel {
   dispose(): void;
 }
 
+// ラベル更新の上限fps（描画コスト削減）
+const LABEL_FPS      = 20;
+const LABEL_INTERVAL = 1 / LABEL_FPS;
+
+// カメラ移動量がこれ以下なら再描画をスキップ
+const MOVE_THRESHOLD = 0.0001;
+
 export function createProximityLabel(
   camera: THREE.Camera,
   nodes: KanjiNode[],
@@ -33,15 +40,33 @@ export function createProximityLabel(
   const nodePos   = new THREE.Vector3();
   const screenPos = new THREE.Vector3();
 
-  function update(_dt: number) {
+  // 案1: dirty check 用の前フレームカメラ位置
+  const prevCamPos = new THREE.Vector3(Infinity, Infinity, Infinity);
+  // 案2: スロットル用タイマー
+  let labelTimer = 0;
+
+  function update(dt: number) {
+    const camDist = camera.position.length();
+
+    // ズームアウト時は即クリアして終了（ラグなし）
+    if (camDist >= LABEL_FAR) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      prevCamPos.set(Infinity, Infinity, Infinity); // 次回ズームインで必ず再描画
+      return;
+    }
+
+    // 案2: スロットル — LABEL_FPS を超えるフレームはスキップ
+    labelTimer += dt;
+    if (labelTimer < LABEL_INTERVAL) return;
+    labelTimer = 0;
+
+    // 案1: dirty check — カメラがほぼ動いていなければスキップ
+    if (camera.position.distanceTo(prevCamPos) < MOVE_THRESHOLD) return;
+    prevCamPos.copy(camera.position);
+
     const w = canvas.width;
     const h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-
-    const camDist = camera.position.length();
-
-    // ズームアウト時は全非表示
-    if (camDist >= LABEL_FAR) return;
 
     // labelAlpha: LABEL_FAR → 0, LABEL_NEAR以下 → 1
     const labelAlpha = Math.min(1, Math.max(0,
