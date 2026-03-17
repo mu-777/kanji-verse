@@ -19,6 +19,10 @@ export interface ProximityLabel {
 // カメラ移動量がこれ以下なら再描画をスキップ
 const MOVE_THRESHOLD = 0.0001;
 
+// 案B: これより遠いノードは project() 前にスキップ
+// SIZE_FACTOR/worldDist < MIN_FONT_PX になる距離より少し余裕を持たせた値
+const WORLD_DIST_MAX = SIZE_FACTOR / MIN_FONT_PX + 0.5; // ≈ 4.25
+
 export function createProximityLabel(
   camera: THREE.Camera,
   nodes: KanjiNode[],
@@ -72,7 +76,9 @@ export function createProximityLabel(
         node.z !== undefined ? (node.z - 0.5) * WORLD_SCALE : 0,
       );
 
+      // 案B: 遠すぎるノードは project() を呼ばずスキップ
       const worldDist = camera.position.distanceTo(nodePos);
+      if (worldDist > WORLD_DIST_MAX) continue;
 
       screenPos.copy(nodePos).project(camera);
 
@@ -84,20 +90,27 @@ export function createProximityLabel(
       const y = (-screenPos.y * 0.5 + 0.5) * h;
 
       const fontSize = Math.min(MAX_FONT_PX, Math.max(MIN_FONT_PX, SIZE_FACTOR / worldDist));
+      const font = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
 
-      ctx.font = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
+      const color   = node.t === 0 ? "#dce6ff" : "#ffd98e";
+      const glowCol = node.t === 0 ? "#96aaff"  : "#ffc864";
 
-      const color    = node.t === 0 ? "#dce6ff" : "#ffd98e";
-      const glowCol  = node.t === 0 ? "rgba(150,170,255,0.8)" : "rgba(255,200,100,0.8)";
+      // 案A: shadowBlur の代わりに4方向オフセット描画で疑似グロー
+      const off = Math.max(1, fontSize * 0.06) | 0;
+      ctx.font        = font;
+      ctx.fillStyle   = glowCol;
+      ctx.globalAlpha = labelAlpha * 0.35;
+      ctx.fillText(node.k, x - off, y);
+      ctx.fillText(node.k, x + off, y);
+      ctx.fillText(node.k, x, y - off);
+      ctx.fillText(node.k, x, y + off);
 
-      ctx.globalAlpha  = labelAlpha * 0.9;
-      ctx.shadowColor  = glowCol;
-      ctx.shadowBlur   = fontSize * 0.5;
-      ctx.fillStyle    = color;
+      // メインテキスト
+      ctx.fillStyle   = color;
+      ctx.globalAlpha = labelAlpha * 0.9;
       ctx.fillText(node.k, x, y);
     }
 
-    ctx.shadowBlur  = 0;
     ctx.globalAlpha = 1;
   }
 
