@@ -33,8 +33,10 @@ export function createProximityLabel(
   resize();
   window.addEventListener("resize", resize);
 
-  const nodePos   = new THREE.Vector3();
-  const screenPos = new THREE.Vector3();
+  const nodePos        = new THREE.Vector3();
+  const screenPos      = new THREE.Vector3();
+  const frustum        = new THREE.Frustum();
+  const projViewMatrix = new THREE.Matrix4();
 
   // dirty check 用の前フレームカメラ位置
   const prevCamPos = new THREE.Vector3(Infinity, Infinity, Infinity);
@@ -65,6 +67,10 @@ export function createProximityLabel(
     ctx.textAlign    = "center";
     ctx.textBaseline = "middle";
 
+    // 案D: Frustumカリング — ループ前に1回だけ更新
+    projViewMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(projViewMatrix);
+
     for (const node of nodes) {
       nodePos.set(
         (node.x - 0.5) * WORLD_SCALE,
@@ -72,32 +78,40 @@ export function createProximityLabel(
         node.z !== undefined ? (node.z - 0.5) * WORLD_SCALE : 0,
       );
 
-      const worldDist = camera.position.distanceTo(nodePos);
+      // 視錐台外は project() と distanceTo() を呼ばずスキップ
+      if (!frustum.containsPoint(nodePos)) continue;
 
+      const worldDist = camera.position.distanceTo(nodePos);
       screenPos.copy(nodePos).project(camera);
 
-      // カメラ後方 or 画面外はスキップ
-      if (screenPos.z > 1) continue;
+      // 画面外マージンチェック（Frustumより厳密）
       if (Math.abs(screenPos.x) > 1.1 || Math.abs(screenPos.y) > 1.1) continue;
 
       const x = ( screenPos.x * 0.5 + 0.5) * w;
       const y = (-screenPos.y * 0.5 + 0.5) * h;
 
       const fontSize = Math.min(MAX_FONT_PX, Math.max(MIN_FONT_PX, SIZE_FACTOR / worldDist));
+      const font = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
 
-      ctx.font = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
+      const color   = node.t === 0 ? "#dce6ff" : "#ffd98e";
+      const glowCol = node.t === 0 ? "#96aaff"  : "#ffc864";
 
-      const color    = node.t === 0 ? "#dce6ff" : "#ffd98e";
-      const glowCol  = node.t === 0 ? "rgba(150,170,255,0.8)" : "rgba(255,200,100,0.8)";
+      // 案A: shadowBlur の代わりに4方向オフセット描画で疑似グロー
+      const off = Math.max(1, fontSize * 0.06) | 0;
+      ctx.font        = font;
+      ctx.fillStyle   = glowCol;
+      ctx.globalAlpha = labelAlpha * 0.35;
+      ctx.fillText(node.k, x - off, y);
+      ctx.fillText(node.k, x + off, y);
+      ctx.fillText(node.k, x, y - off);
+      ctx.fillText(node.k, x, y + off);
 
-      ctx.globalAlpha  = labelAlpha * 0.9;
-      ctx.shadowColor  = glowCol;
-      ctx.shadowBlur   = fontSize * 0.5;
-      ctx.fillStyle    = color;
+      // メインテキスト
+      ctx.fillStyle   = color;
+      ctx.globalAlpha = labelAlpha * 0.9;
       ctx.fillText(node.k, x, y);
     }
 
-    ctx.shadowBlur  = 0;
     ctx.globalAlpha = 1;
   }
 
