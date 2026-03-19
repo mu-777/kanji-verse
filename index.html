@@ -6,13 +6,17 @@
     <title>Kanji-Verse — 3D (Three.js + UMAP 3D)</title>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html { overflow: hidden; }
       body {
         background: #05050f;
         color: #e0e4ff;
         font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
         overflow: hidden; height: 100dvh;
       }
-      #canvas { display: block; }
+      /* canvas を fixed にしてドキュメントフローから切り離す。
+         Three.js の renderer.setSize() がインラインスタイルで width/height を書き込むと
+         iOS Safari で initial containing block の幅がずれ、fixed 要素の配置が崩れる。 */
+      #canvas { display: block; position: fixed; top: 0; left: 0; }
 
       #search-bar {
         position: fixed; top: 20px; left: 0; right: 0;
