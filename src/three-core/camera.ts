@@ -12,8 +12,9 @@ export interface CameraBundle {
 const INERTIA_ROT_HALF_LIFE  = 4.0;  // 回転慣性の半減期（秒）
 const INERTIA_ZOOM_HALF_LIFE = 1.5;  // ズーム慣性の半減期（秒）
 const INERTIA_ZOOM_THRESH    = 0.02; // ズーム慣性を引き継ぐ閾値 (units/s)
-// 初回ズームイン初速: r=3 → minDistance(0.3) に当たって停止（強め）
-const INTRO_ZOOM_SPEED = -1.5;
+// 初回ズームイン初速: r=3 → r=0.3 に収束
+// 収束半径 = r0 + v0 * T_half / ln2 = 3 + v0 * 1.5 / ln2 = 0.3 → v0 ≈ -1.247
+const INTRO_ZOOM_SPEED = -1.247;
 const ROT_DECAY_RATE  = -Math.LN2 / INERTIA_ROT_HALF_LIFE;
 const ZOOM_DECAY_RATE = -Math.LN2 / INERTIA_ZOOM_HALF_LIFE;
 const SMOOTH_ALPHA         = 0.25;   // 速度スムージング係数
