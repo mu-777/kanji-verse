@@ -7,6 +7,10 @@ const LABEL_FAR  = 2.5;
 
 const TEX_SIZE = 128;
 
+// fontSize を小さめにしてキャンバス端の余白を確保し、shadowBlur が欠けないようにする
+const FONT_RATIO  = 0.55;   // TEX_SIZE に対する文字サイズ比率
+const GLOW_RATIO  = 0.25;   // fontSize に対するグロー半径比率
+
 // SIZE_FACTOR(30) / focalLength_px(≈935) ≈ 0.032 が現行 fontSize 式と等価
 const SPRITE_SCALE = 0.04;
 
@@ -23,25 +27,30 @@ function makeKanjiTexture(char: string, type: number): THREE.CanvasTexture {
   c.height = TEX_SIZE;
   const ctx = c.getContext("2d")!;
 
-  const fontSize = TEX_SIZE * 0.72;
+  const fontSize = TEX_SIZE * FONT_RATIO;
   ctx.font         = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
 
   const color   = type === 0 ? "#dce6ff" : "#ffd98e";
   const glowCol = type === 0 ? "#96aaff" : "#ffc864";
-  const off = Math.max(1, fontSize * 0.06) | 0;
+  const cx = TEX_SIZE / 2;
+  const cy = TEX_SIZE / 2;
 
-  ctx.fillStyle   = glowCol;
-  ctx.globalAlpha = 0.35;
-  ctx.fillText(char, TEX_SIZE / 2 - off, TEX_SIZE / 2);
-  ctx.fillText(char, TEX_SIZE / 2 + off, TEX_SIZE / 2);
-  ctx.fillText(char, TEX_SIZE / 2, TEX_SIZE / 2 - off);
-  ctx.fillText(char, TEX_SIZE / 2, TEX_SIZE / 2 + off);
+  // 外側グロー: shadowBlur でガウスぼかし + AdditiveBlending で自然な発光感
+  ctx.shadowColor   = glowCol;
+  ctx.shadowBlur    = fontSize * GLOW_RATIO;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.fillStyle     = glowCol;
+  ctx.globalAlpha   = 0.7;
+  ctx.fillText(char, cx, cy);
 
+  // シャープな本体 (薄いグローを残してエッジを際立たせる)
+  ctx.shadowBlur  = fontSize * 0.06;
   ctx.fillStyle   = color;
-  ctx.globalAlpha = 0.9;
-  ctx.fillText(char, TEX_SIZE / 2, TEX_SIZE / 2);
+  ctx.globalAlpha = 1.0;
+  ctx.fillText(char, cx, cy);
 
   return new THREE.CanvasTexture(c);
 }
@@ -72,6 +81,7 @@ export function createProximityLabel(
       opacity:     0,
       depthTest:   false,
       depthWrite:  false,
+      blending:    THREE.AdditiveBlending,
     });
     const sprite = new THREE.Sprite(mat);
     sprite.position.set(
