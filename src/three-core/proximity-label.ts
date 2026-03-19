@@ -9,7 +9,7 @@ const TEX_SIZE = 128;
 
 // fontSize を小さめにしてキャンバス端の余白を確保し、shadowBlur が欠けないようにする
 const FONT_RATIO  = 0.55;   // TEX_SIZE に対する文字サイズ比率
-const GLOW_RATIO  = 0.25;   // fontSize に対するグロー半径比率
+const GLOW_RATIO  = 0.5;    // fontSize に対するグロー半径比率
 
 // SIZE_FACTOR(30) / focalLength_px(≈935) ≈ 0.032 が現行 fontSize 式と等価
 const SPRITE_SCALE = 0.04;
