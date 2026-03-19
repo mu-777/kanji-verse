@@ -18,6 +18,8 @@ export interface ProximityLabel {
   update(dt: number): void;
   /** composer.render() の直後に呼ぶ。bloom 対象外で上書き描画する。 */
   render(renderer: THREE.WebGLRenderer): void;
+  /** ローディング中に呼んでGPUへテクスチャを事前転送する。初回zoom時のカクつきを防ぐ。 */
+  warmup(renderer: THREE.WebGLRenderer): void;
   dispose(): void;
 }
 
@@ -130,9 +132,16 @@ export function createProximityLabel(
     renderer.autoClear = true;
   }
 
+  function warmup(renderer: THREE.WebGLRenderer) {
+    for (const tex of textureCache.values()) {
+      renderer.initTexture(tex);
+    }
+  }
+
   return {
     update,
     render,
+    warmup,
     dispose() {
       for (const s of sprites) {
         (s.material as THREE.SpriteMaterial).dispose();
