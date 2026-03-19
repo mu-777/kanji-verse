@@ -4,13 +4,9 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 export interface CameraBundle {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
-  startAutoPilot(): void;
-  stopAutoPilot(): void;
   update(dt: number): void;
 }
 
-const AUTO_PILOT_IDLE_MS   = 3000;   // 初回デモ開始までの待機 (ms)
-const AUTO_PILOT_SPEED     = 0.04;   // Lissajous 角速度スケール
 const INERTIA_ROT_HALF_LIFE  = 4.0;  // 回転慣性の半減期（秒）
 const INERTIA_ZOOM_HALF_LIFE = 1.5;  // ズーム慣性の半減期（秒）
 const INERTIA_ZOOM_THRESH    = 0.02; // ズーム慣性を引き継ぐ閾値 (units/s)
@@ -18,7 +14,7 @@ const ROT_DECAY_RATE  = -Math.LN2 / INERTIA_ROT_HALF_LIFE;
 const ZOOM_DECAY_RATE = -Math.LN2 / INERTIA_ZOOM_HALF_LIFE;
 const SMOOTH_ALPHA         = 0.25;   // 速度スムージング係数
 
-type Mode = "lissajous" | "user" | "inertia";
+type Mode = "user" | "inertia";
 
 export function createCamera(
   renderer: THREE.WebGLRenderer,
@@ -47,25 +43,8 @@ export function createCamera(
     camera.updateProjectionMatrix();
   });
 
-  // ── Lissajous（初回デモのみ） ──
-  const ax = AUTO_PILOT_SPEED * 1.0;
-  const ay = AUTO_PILOT_SPEED * 0.7;
-  const az = AUTO_PILOT_SPEED * 0.5;
-
-  function lissajousPos(t: number): THREE.Vector3 {
-    const r = initialDistance * 0.85;
-    return new THREE.Vector3(
-      r * Math.sin(t * ax),
-      r * Math.sin(t * ay + 0.5),
-      r * Math.cos(t * az) + initialDistance * 0.3,
-    );
-  }
-
   // ── 状態 ──
-  let mode: Mode = "lissajous";
-  let userHasInteracted = false;
-  let lissajousElapsed = 0;
-  let initTimer: ReturnType<typeof setTimeout> | null = null;
+  let mode: Mode = "user";
 
   // ── 球座標速度トラッキング ──
   const prevSph = new THREE.Spherical();
@@ -81,21 +60,13 @@ export function createCamera(
   let inertiaPhi    = 0;
   let inertiaRadius = 0;
 
-  // ── 初回デモ ──
-  initTimer = setTimeout(() => {
-    if (!userHasInteracted) mode = "lissajous";
-  }, AUTO_PILOT_IDLE_MS);
-
   // ── マウス押下：ユーザー操作モードへ ──
   controls.addEventListener("start", () => {
-    userHasInteracted = true;
     mode = "user";
-    if (initTimer) { clearTimeout(initTimer); initTimer = null; }
   });
 
   // ── 操作終了：その瞬間の速度をそのまま引き継いで慣性モードへ ──
   controls.addEventListener("end", () => {
-    if (!userHasInteracted) return;
     // タイマーなし・最低速度なし——damping が自然に届いたその速度で続ける
     inertiaTheta  = thetaVelSmooth;
     inertiaPhi    = phiVelSmooth;
@@ -103,14 +74,6 @@ export function createCamera(
     inertiaSph.setFromVector3(camera.position);
     mode = "inertia";
   });
-
-  // ── 公開 API ──
-  function startAutoPilot() {
-    if (!userHasInteracted) mode = "lissajous";
-  }
-  function stopAutoPilot() {
-    if (mode === "lissajous") mode = "user";
-  }
 
   // ── フレームごとの更新 ──
   function update(dt: number) {
@@ -148,13 +111,9 @@ export function createCamera(
       }
       camera.position.setFromSpherical(inertiaSph);
       camera.lookAt(0, 0, 0);
-    } else if (mode === "lissajous") {
-      lissajousElapsed += dt;
-      camera.position.copy(lissajousPos(lissajousElapsed));
-      camera.lookAt(0, 0, 0);
     }
     // "user" は OrbitControls に委ねる
   }
 
-  return { camera, controls, startAutoPilot, stopAutoPilot, update };
+  return { camera, controls, update };
 }
