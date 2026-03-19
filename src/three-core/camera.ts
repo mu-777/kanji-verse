@@ -37,6 +37,10 @@ export function createCamera(
   controls.dampingFactor = 0.06;
   controls.minDistance = 0.3;
   controls.maxDistance = 8;
+  // パンを無効化。モバイルで2本指ズーム時に DOLLY_PAN として処理され
+  // controls.target が (0,0,0) からずれると、user モード時に
+  // OrbitControls が lookAt(target) を呼び出して視点がジャンプする。
+  controls.enablePan = false;
 
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
