@@ -2,21 +2,18 @@ import * as THREE from "three";
 import type { KanjiNode } from "../shared/types";
 import { WORLD_SCALE } from "./points";
 
-// カメラ距離がこれ以下になると漢字表示開始（フェードイン開始）
 const LABEL_NEAR = 1.5;
-// カメラ距離がこれ以上だと非表示
 const LABEL_FAR  = 2.5;
 
-// テクスチャサイズ（px）— 漢字1文字を高解像度で焼き付ける
 const TEX_SIZE = 128;
 
-// スプライトのワールドスペーススケール
 // SIZE_FACTOR(30) / focalLength_px(≈935) ≈ 0.032 が現行 fontSize 式と等価
-// 透視投影が自然に距離感を表現するため固定値でよい
 const SPRITE_SCALE = 0.04;
 
 export interface ProximityLabel {
   update(dt: number): void;
+  /** composer.render() の直後に呼ぶ。bloom 対象外で上書き描画する。 */
+  render(renderer: THREE.WebGLRenderer): void;
   dispose(): void;
 }
 
@@ -52,9 +49,10 @@ function makeKanjiTexture(char: string, type: number): THREE.CanvasTexture {
 export function createProximityLabel(
   camera: THREE.Camera,
   nodes: KanjiNode[],
-  scene: THREE.Scene,
 ): ProximityLabel {
-  // テクスチャキャッシュ — 同じ漢字・同じ種別はテクスチャを共有
+  // bloom から完全に分離した専用シーン
+  const spriteScene = new THREE.Scene();
+
   const textureCache = new Map<string, THREE.CanvasTexture>();
 
   function getTexture(k: string, t: number): THREE.CanvasTexture {
@@ -67,7 +65,6 @@ export function createProximityLabel(
     return tex;
   }
 
-  // 各ノードに対応する Sprite を生成してシーンに追加
   const sprites: THREE.Sprite[] = nodes.map(node => {
     const mat = new THREE.SpriteMaterial({
       map:         getTexture(node.k, node.t),
@@ -83,13 +80,11 @@ export function createProximityLabel(
       node.z !== undefined ? (node.z - 0.5) * WORLD_SCALE : 0,
     );
     sprite.scale.setScalar(SPRITE_SCALE);
-    sprite.visible     = false;
-    sprite.renderOrder = 999;
-    scene.add(sprite);
+    sprite.visible = false;
+    spriteScene.add(sprite);
     return sprite;
   });
 
-  // 前フレームの表示状態を保持して不要な一括書き換えを避ける
   let wasVisible = false;
 
   function update(_dt: number) {
@@ -107,7 +102,6 @@ export function createProximityLabel(
       (LABEL_FAR - camDist) / (LABEL_FAR - LABEL_NEAR),
     ));
 
-    // Three.js の Frustum カリングがスプライトごとの可視判定を担う
     if (!wasVisible) {
       for (const s of sprites) s.visible = true;
       wasVisible = true;
@@ -118,11 +112,19 @@ export function createProximityLabel(
     }
   }
 
+  function render(renderer: THREE.WebGLRenderer) {
+    if (!wasVisible) return;
+    // bloom 出力を消さずにスプライトだけ上書き
+    renderer.autoClear = false;
+    renderer.render(spriteScene, camera);
+    renderer.autoClear = true;
+  }
+
   return {
     update,
+    render,
     dispose() {
       for (const s of sprites) {
-        scene.remove(s);
         (s.material as THREE.SpriteMaterial).dispose();
       }
       for (const tex of textureCache.values()) tex.dispose();
