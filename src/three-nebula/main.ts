@@ -25,7 +25,7 @@ async function main() {
   }
 
   const { scene, renderer }              = createScene(canvas);
-  const { camera, update: updateCamera } = createCamera(renderer);
+  const { camera, update: updateCamera, startIntroZoom } = createCamera(renderer);
   const kanjiPoints                      = createKanjiPoints(nodes);
   const { composer }                     = createComposer(renderer, scene, camera);
 
@@ -53,6 +53,7 @@ async function main() {
   proximityLabel.warmup(renderer);
 
   loading.style.display = "none";
+  startIntroZoom();
 
   setupUI({
     search:      (k) => interaction.search(k),

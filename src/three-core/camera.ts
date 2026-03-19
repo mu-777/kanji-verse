@@ -4,12 +4,17 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 export interface CameraBundle {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+  /** ロード完了後に呼ぶ。ズーム慣性でカメラを引き込み、点→文字の遷移を演出する。 */
+  startIntroZoom(): void;
   update(dt: number): void;
 }
 
 const INERTIA_ROT_HALF_LIFE  = 4.0;  // 回転慣性の半減期（秒）
 const INERTIA_ZOOM_HALF_LIFE = 1.5;  // ズーム慣性の半減期（秒）
 const INERTIA_ZOOM_THRESH    = 0.02; // ズーム慣性を引き継ぐ閾値 (units/s)
+// 初回ズームイン初速: r=3 → r≈2.0 付近に収束（LABEL_FAR=2.5 を越えて文字が現れる）
+// 収束半径 = initialDistance + v0 * HALF_LIFE / ln2 = 3 + (-0.46) * 2.164 ≈ 2.0
+const INTRO_ZOOM_SPEED = -0.46;
 const ROT_DECAY_RATE  = -Math.LN2 / INERTIA_ROT_HALF_LIFE;
 const ZOOM_DECAY_RATE = -Math.LN2 / INERTIA_ZOOM_HALF_LIFE;
 const SMOOTH_ALPHA         = 0.25;   // 速度スムージング係数
@@ -59,6 +64,13 @@ export function createCamera(
   let inertiaTheta  = 0;
   let inertiaPhi    = 0;
   let inertiaRadius = 0;
+
+  // ── 初回ズームイン ──
+  function startIntroZoom() {
+    inertiaSph.setFromVector3(camera.position);
+    inertiaRadius = INTRO_ZOOM_SPEED;
+    mode = "inertia";
+  }
 
   // ── マウス押下：ユーザー操作モードへ ──
   controls.addEventListener("start", () => {
@@ -115,5 +127,5 @@ export function createCamera(
     // "user" は OrbitControls に委ねる
   }
 
-  return { camera, controls, update };
+  return { camera, controls, startIntroZoom, update };
 }
