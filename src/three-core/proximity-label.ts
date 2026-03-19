@@ -19,10 +19,6 @@ export interface ProximityLabel {
 // カメラ移動量がこれ以下なら再描画をスキップ
 const MOVE_THRESHOLD = 0.0001;
 
-// 案B: これより遠いノードは project() 前にスキップ
-// SIZE_FACTOR/worldDist < MIN_FONT_PX になる距離より少し余裕を持たせた値
-const WORLD_DIST_MAX = SIZE_FACTOR / MIN_FONT_PX + 0.5; // ≈ 4.25
-
 export function createProximityLabel(
   camera: THREE.Camera,
   nodes: KanjiNode[],
@@ -37,8 +33,10 @@ export function createProximityLabel(
   resize();
   window.addEventListener("resize", resize);
 
-  const nodePos   = new THREE.Vector3();
-  const screenPos = new THREE.Vector3();
+  const nodePos        = new THREE.Vector3();
+  const screenPos      = new THREE.Vector3();
+  const frustum        = new THREE.Frustum();
+  const projViewMatrix = new THREE.Matrix4();
 
   // dirty check 用の前フレームカメラ位置
   const prevCamPos = new THREE.Vector3(Infinity, Infinity, Infinity);
@@ -69,6 +67,10 @@ export function createProximityLabel(
     ctx.textAlign    = "center";
     ctx.textBaseline = "middle";
 
+    // 案D: Frustumカリング — ループ前に1回だけ更新
+    projViewMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(projViewMatrix);
+
     for (const node of nodes) {
       nodePos.set(
         (node.x - 0.5) * WORLD_SCALE,
@@ -76,14 +78,13 @@ export function createProximityLabel(
         node.z !== undefined ? (node.z - 0.5) * WORLD_SCALE : 0,
       );
 
-      // 案B: 遠すぎるノードは project() を呼ばずスキップ
-      const worldDist = camera.position.distanceTo(nodePos);
-      if (worldDist > WORLD_DIST_MAX) continue;
+      // 視錐台外は project() と distanceTo() を呼ばずスキップ
+      if (!frustum.containsPoint(nodePos)) continue;
 
+      const worldDist = camera.position.distanceTo(nodePos);
       screenPos.copy(nodePos).project(camera);
 
-      // カメラ後方 or 画面外はスキップ
-      if (screenPos.z > 1) continue;
+      // 画面外マージンチェック（Frustumより厳密）
       if (Math.abs(screenPos.x) > 1.1 || Math.abs(screenPos.y) > 1.1) continue;
 
       const x = ( screenPos.x * 0.5 + 0.5) * w;
