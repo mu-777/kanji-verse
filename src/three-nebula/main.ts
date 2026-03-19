@@ -48,7 +48,7 @@ async function main() {
     },
   );
 
-  const proximityLabel = createProximityLabel(camera, nodes, scene);
+  const proximityLabel = createProximityLabel(camera, nodes);
 
   loading.style.display = "none";
 
@@ -72,6 +72,7 @@ async function main() {
     updateCamera(dt);
     proximityLabel.update(dt);
     composer.render();
+    proximityLabel.render(renderer);
   }
   animate();
 }
