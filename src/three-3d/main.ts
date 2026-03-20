@@ -51,18 +51,23 @@ async function main() {
   loading.style.display = "none";
   startIntroZoom();
 
+  function nodeWorldPos(n: { x: number; y: number; z?: number }): THREE.Vector3 {
+    return new THREE.Vector3(
+      (n.x - 0.5) * WORLD_SCALE,
+      (n.y - 0.5) * WORLD_SCALE,
+      n.z !== undefined ? (n.z - 0.5) * WORLD_SCALE : 0,
+    );
+  }
+
+  // 再クリック時: searchNode は interaction 側で設定済み、カメラを飛ばす
+  interaction.onFlyTo = (node) => flyTo(nodeWorldPos(node));
+
   // setupUI が期待する UIRenderer インターフェースを満たす adapter
   setupUI({
     search: (k) => {
       const found = interaction.search(k);
       if (found && interaction.searchNode) {
-        const n = interaction.searchNode;
-        const pos = new THREE.Vector3(
-          (n.x - 0.5) * WORLD_SCALE,
-          (n.y - 0.5) * WORLD_SCALE,
-          n.z !== undefined ? (n.z - 0.5) * WORLD_SCALE : 0,
-        );
-        flyTo(pos);
+        flyTo(nodeWorldPos(interaction.searchNode));
       }
       return found;
     },
