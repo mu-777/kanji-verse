@@ -80,7 +80,7 @@ export function createInteraction(
     const ray = raycaster.ray;
 
     // 各ノードとレイの距離を計算し最近傍を返す
-    const SCREEN_THRESHOLD = 0.025; // NDC 単位の当たり判定半径
+    const SCREEN_THRESHOLD = 0.08; // NDC 単位の当たり判定半径
     let best: KanjiNode | null = null;
     let bestDist = Infinity;
 

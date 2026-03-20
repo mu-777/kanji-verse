@@ -107,7 +107,7 @@ export class KanjiRenderer {
   private hitTest(sx: number, sy: number): KanjiNode | null {
     const [wx, wy] = this.screenToWorld(sx, sy);
     const visualScreenR = Math.min(NODE_RADIUS_HOVER * Math.sqrt(this.scale), 18);
-    const threshold = (visualScreenR + 12) / this.scale;
+    const threshold = (visualScreenR + 20) / this.scale;
     let best: KanjiNode | null = null;
     let bestDist = threshold * threshold;
     for (const node of this.nodes) {
