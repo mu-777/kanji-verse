@@ -131,6 +131,9 @@ export function createInteraction(
   function onClick(e: MouseEvent) {
     const moved = Math.abs(e.clientX - dragStartX) + Math.abs(e.clientY - dragStartY);
     if (moved > 4) return;
+    // タッチ時は RAF より click が先に発火するため、ここで mouse を更新してから hitTest する
+    mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     const hit = hitTest();
     selectedNode = hit;
     bundle.onSelect(hit);
