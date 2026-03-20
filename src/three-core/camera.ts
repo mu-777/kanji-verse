@@ -98,11 +98,13 @@ export function createCamera(
 
   // ── 初回ズームイン ──
   function startIntroZoom() {
-    _tmp.copy(camera.position).sub(controls.target);
-    inertiaSph.setFromVector3(_tmp);
-    inertiaTarget.copy(controls.target);
-    inertiaRadius = INTRO_ZOOM_SPEED;
-    mode = "inertia";
+    setTimeout(() => {
+      _tmp.copy(camera.position).sub(controls.target);
+      inertiaSph.setFromVector3(_tmp);
+      inertiaTarget.copy(controls.target);
+      inertiaRadius = INTRO_ZOOM_SPEED;
+      mode = "inertia";
+    }, 3000);
   }
 
   // ── 検索対象へのカメラ移動 ──
