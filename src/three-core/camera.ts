@@ -17,6 +17,7 @@ const INERTIA_ZOOM_THRESH    = 0.02; // ズーム慣性を引き継ぐ閾値 (un
 // 初回ズームイン初速: r=3 → r=0.3 に収束
 // 収束半径 = r0 + v0 * T_half / ln2 = 3 + v0 * 1.5 / ln2 = 0.3 → v0 ≈ -1.247
 const INTRO_ZOOM_SPEED = -1.247;
+const INTRO_ROT_SPEED  = 0.4;   // 初回右回転初速 (rad/s)、半減期4sで自然に減衰
 const ROT_DECAY_RATE  = -Math.LN2 / INERTIA_ROT_HALF_LIFE;
 const ZOOM_DECAY_RATE = -Math.LN2 / INERTIA_ZOOM_HALF_LIFE;
 const SMOOTH_ALPHA    = 0.25;   // 速度スムージング係数
@@ -96,14 +97,18 @@ export function createCamera(
     return t * t * (3 - 2 * t);
   }
 
-  // ── 初回ズームイン ──
+  // ── 初回イントロアニメーション：即座に右回転、3秒後にズーム ──
   function startIntroZoom() {
+    _tmp.copy(camera.position).sub(controls.target);
+    inertiaSph.setFromVector3(_tmp);
+    inertiaTarget.copy(controls.target);
+    inertiaTheta  = INTRO_ROT_SPEED;
+    inertiaPhi    = 0;
+    inertiaRadius = 0;
+    mode = "inertia";
+
     setTimeout(() => {
-      _tmp.copy(camera.position).sub(controls.target);
-      inertiaSph.setFromVector3(_tmp);
-      inertiaTarget.copy(controls.target);
       inertiaRadius = INTRO_ZOOM_SPEED;
-      mode = "inertia";
     }, 3000);
   }
 
