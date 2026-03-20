@@ -10,6 +10,8 @@ export interface InteractionBundle {
   clearSearch(): void;
   setFilter(joyo: boolean, jinmei: boolean): void;
   onSelect: (node: KanjiNode | null) => void;
+  /** ポップアップ表示中に同じノードを再クリックしたとき呼ばれる。flyTo などに使う。 */
+  onFlyTo: (node: KanjiNode) => void;
   dispose(): void;
 }
 
@@ -40,6 +42,7 @@ export function createInteraction(
     get selectedNode() { return selectedNode; },
     get searchNode()   { return searchNode; },
     onSelect: () => {},
+    onFlyTo: () => {},
 
     search(kanji: string): boolean {
       if (!kanji) { searchNode = null; onHighlightChange(); return false; }
@@ -135,6 +138,15 @@ export function createInteraction(
     mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     const hit = hitTest();
+
+    // ポップアップ表示中に同じノードを再クリック → 緑にしてオービットセンターへ
+    if (hit !== null && hit === selectedNode) {
+      searchNode = hit;
+      onHighlightChange();
+      bundle.onFlyTo(hit);
+      return;
+    }
+
     selectedNode = hit;
     bundle.onSelect(hit);
     onHighlightChange();
