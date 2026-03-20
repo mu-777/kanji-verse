@@ -47,10 +47,10 @@ export function createCamera(
     MIDDLE: THREE.MOUSE.PAN,
     RIGHT:  THREE.MOUSE.ROTATE,
   };
-  // モバイル: 1本指で回転、2本指でパン
+  // モバイル: 1本指で回転、2本指でピンチズーム＋ドラッグパン
   controls.touches = {
     ONE: THREE.TOUCH.ROTATE,
-    TWO: THREE.TOUCH.PAN,
+    TWO: THREE.TOUCH.DOLLY_PAN,
   };
 
   window.addEventListener("resize", () => {
