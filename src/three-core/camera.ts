@@ -6,6 +6,8 @@ export interface CameraBundle {
   controls: OrbitControls;
   /** ロード完了後に呼ぶ。ズーム慣性でカメラを引き込み、点→文字の遷移を演出する。 */
   startIntroZoom(): void;
+  /** 指定ワールド座標のノードが画面中央に来るようカメラを飛ばす。 */
+  flyTo(target: THREE.Vector3): void;
   update(dt: number): void;
 }
 
@@ -19,7 +21,7 @@ const ROT_DECAY_RATE  = -Math.LN2 / INERTIA_ROT_HALF_LIFE;
 const ZOOM_DECAY_RATE = -Math.LN2 / INERTIA_ZOOM_HALF_LIFE;
 const SMOOTH_ALPHA         = 0.25;   // 速度スムージング係数
 
-type Mode = "user" | "inertia";
+type Mode = "user" | "inertia" | "fly";
 
 export function createCamera(
   renderer: THREE.WebGLRenderer,
@@ -65,11 +67,45 @@ export function createCamera(
   let inertiaPhi    = 0;
   let inertiaRadius = 0;
 
+  // ── fly モードの状態 ──
+  const flySph      = new THREE.Spherical();
+  let flySrcTheta   = 0;
+  let flySrcPhi     = 0;
+  let flySrcRadius  = 0;
+  let flyPeakRadius = 0;
+  let flyTargetTheta = 0;
+  let flyTargetPhi   = 0;
+  let flyT = 0;
+  const FLY_DURATION   = 1.8;  // アニメーション全体の秒数
+  const FLY_END_RADIUS = 0.6;  // 最終的な距離
+  const FLY_PEAK_MIN   = 2.0;  // 引きの最小半径
+
+  /** smoothstep: [0,1] → [0,1] */
+  function smoothstep(t: number): number {
+    return t * t * (3 - 2 * t);
+  }
+
   // ── 初回ズームイン ──
   function startIntroZoom() {
     inertiaSph.setFromVector3(camera.position);
     inertiaRadius = INTRO_ZOOM_SPEED;
     mode = "inertia";
+  }
+
+  // ── 検索対象へのカメラ移動 ──
+  function flyTo(target: THREE.Vector3) {
+    flySph.setFromVector3(camera.position);
+    flySrcTheta  = flySph.theta;
+    flySrcPhi    = flySph.phi;
+    flySrcRadius = flySph.radius;
+    // 現在位置より十分引けるよう peak を決める
+    flyPeakRadius = Math.max(flySrcRadius * 1.15, FLY_PEAK_MIN);
+
+    const dirSph = new THREE.Spherical().setFromVector3(target.clone().normalize());
+    flyTargetTheta = dirSph.theta;
+    flyTargetPhi   = dirSph.phi;
+    flyT = 0;
+    mode = "fly";
   }
 
   // ── マウス押下：ユーザー操作モードへ ──
@@ -124,8 +160,43 @@ export function createCamera(
       camera.position.setFromSpherical(inertiaSph);
       camera.lookAt(0, 0, 0);
     }
+
+    if (mode === "fly") {
+      flyT = Math.min(flyT + dt / FLY_DURATION, 1);
+
+      // ── 半径: 二次ベジェ (src → peak → end) ──
+      // peak は t=0.5 付近で最大になり、引き→寄りの弧を描く
+      const u = flyT;
+      flySph.radius =
+        (1 - u) * (1 - u) * flySrcRadius +
+        2 * (1 - u) * u   * flyPeakRadius +
+        u * u             * FLY_END_RADIUS;
+
+      // ── 角度: 0.1 遅れて始まり 0.85 で完了する smoothstep ──
+      const rotRaw = Math.max(0, Math.min(1, (flyT - 0.1) / 0.75));
+      const rotEase = smoothstep(rotRaw);
+
+      let dTheta = flyTargetTheta - flySrcTheta;
+      if (dTheta >  Math.PI) dTheta -= 2 * Math.PI;
+      if (dTheta < -Math.PI) dTheta += 2 * Math.PI;
+
+      flySph.theta = flySrcTheta + dTheta * rotEase;
+      flySph.phi   = Math.max(0.01, Math.min(Math.PI - 0.01,
+        flySrcPhi + (flyTargetPhi - flySrcPhi) * rotEase,
+      ));
+
+      camera.position.setFromSpherical(flySph);
+      camera.lookAt(0, 0, 0);
+
+      if (flyT >= 1) {
+        controls.object.position.copy(camera.position);
+        controls.update();
+        mode = "user";
+      }
+    }
+
     // "user" は OrbitControls に委ねる
   }
 
-  return { camera, controls, startIntroZoom, update };
+  return { camera, controls, startIntroZoom, flyTo, update };
 }

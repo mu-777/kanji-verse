@@ -1,6 +1,8 @@
+import * as THREE               from "three";
 import { createScene }          from "../three-core/scene";
 import { createCamera }         from "../three-core/camera";
 import { createKanjiPoints }    from "../three-core/points";
+import { WORLD_SCALE }          from "../three-core/points";
 import { createComposer }       from "../three-core/composer";
 import { createInteraction }    from "../three-core/interaction";
 import { createProximityLabel } from "../three-core/proximity-label";
@@ -24,7 +26,7 @@ async function main() {
   }
 
   const { scene, renderer }      = createScene(canvas);
-  const { camera, update: updateCamera, startIntroZoom } = createCamera(renderer);
+  const { camera, update: updateCamera, startIntroZoom, flyTo } = createCamera(renderer);
   const kanjiPoints              = createKanjiPoints(nodes);
   const { composer }             = createComposer(renderer, scene, camera);
   scene.add(kanjiPoints.points);
@@ -51,7 +53,19 @@ async function main() {
 
   // setupUI が期待する UIRenderer インターフェースを満たす adapter
   setupUI({
-    search:     (k) => interaction.search(k),
+    search: (k) => {
+      const found = interaction.search(k);
+      if (found && interaction.searchNode) {
+        const n = interaction.searchNode;
+        const pos = new THREE.Vector3(
+          (n.x - 0.5) * WORLD_SCALE,
+          (n.y - 0.5) * WORLD_SCALE,
+          n.z !== undefined ? (n.z - 0.5) * WORLD_SCALE : 0,
+        );
+        flyTo(pos);
+      }
+      return found;
+    },
     clearSearch: () => interaction.clearSearch(),
     setFilter:  (f) => {
       interaction.setFilter(f.joyo, f.jinmei);
