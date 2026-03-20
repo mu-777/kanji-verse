@@ -77,7 +77,7 @@ export function createCamera(
   let flyTargetPhi   = 0;
   let flyT = 0;
   const FLY_DURATION   = 1.8;  // アニメーション全体の秒数
-  const FLY_END_RADIUS = 0.6;  // 最終的な距離
+  const FLY_END_RADIUS = 1.0;  // 最終的な距離
   const FLY_PEAK_MIN   = 2.0;  // 引きの最小半径
 
   /** smoothstep: [0,1] → [0,1] */
