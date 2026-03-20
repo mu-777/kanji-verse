@@ -67,9 +67,11 @@ export function createCamera(
 
   // ── 初回ズームイン ──
   function startIntroZoom() {
-    inertiaSph.setFromVector3(camera.position);
-    inertiaRadius = INTRO_ZOOM_SPEED;
-    mode = "inertia";
+    setTimeout(() => {
+      inertiaSph.setFromVector3(camera.position);
+      inertiaRadius = INTRO_ZOOM_SPEED;
+      mode = "inertia";
+    }, 3000);
   }
 
   // ── マウス押下：ユーザー操作モードへ ──
