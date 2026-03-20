@@ -84,7 +84,7 @@ export function createCamera(
   const flyEndTarget  = new THREE.Vector3();
   let flyT = 0;
   const FLY_DURATION   = 1.8;  // アニメーション全体の秒数
-  const FLY_END_RADIUS = 1.0;  // 最終的なカメラ〜ターゲット距離
+  const FLY_END_RADIUS = 0.35;  // 最終的なカメラ〜ターゲット距離
   const FLY_PEAK_MIN   = 2.0;  // 引きの最小半径（原点からの距離）
 
   // 一時ベクトル（毎フレームのアロケーション回避）
