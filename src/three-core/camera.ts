@@ -185,6 +185,10 @@ export function createCamera(
       _tmp.setFromSpherical(inertiaSph).add(inertiaTarget);
       camera.position.copy(_tmp);
       camera.lookAt(inertiaTarget);
+      // controls.update() の残留 panOffset ダンピングで controls.target がドリフトするのを防ぐ。
+      // これにより、ユーザーがホイールボタンクリックで user モードに復帰したときの
+      // センタージャンプを回避する。
+      controls.target.copy(inertiaTarget);
     }
 
     if (mode === "fly") {
