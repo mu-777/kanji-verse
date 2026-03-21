@@ -37,6 +37,7 @@ export class BloomRenderer {
   private offsetX = 0;
   private offsetY = 0;
   private scale = 1;
+  private minScale = 0.1;
 
   private isDragging = false;
   private dragStartX = 0;
@@ -120,6 +121,7 @@ export class BloomRenderer {
     const worldW = WORLD_SIZE + PADDING * 2;
     const worldH = WORLD_SIZE + PADDING * 2;
     this.scale = Math.min(w / worldW, h / worldH) * 0.9;
+    this.minScale = (this.scale + 0.1) / 2;
     this.offsetX = (w - worldW * this.scale) / 2;
     this.offsetY = (h - worldH * this.scale) / 2;
   }
@@ -357,7 +359,7 @@ export class BloomRenderer {
     const factor = e.deltaY < 0 ? 1.1 : 0.91;
     this.offsetX = e.clientX - (e.clientX - this.offsetX) * factor;
     this.offsetY = e.clientY - (e.clientY - this.offsetY) * factor;
-    this.scale = Math.max(0.1, Math.min(20, this.scale * factor));
+    this.scale = Math.max(this.minScale, Math.min(20, this.scale * factor));
   };
 
   private lastTouchDist = 0;
@@ -387,7 +389,7 @@ export class BloomRenderer {
       const factor = dist / this.lastTouchDist;
       this.offsetX = midX - (this.lastTouchMidX - this.offsetX) * factor;
       this.offsetY = midY - (this.lastTouchMidY - this.offsetY) * factor;
-      this.scale = Math.max(0.1, Math.min(20, this.scale * factor));
+      this.scale = Math.max(this.minScale, Math.min(20, this.scale * factor));
       this.lastTouchDist = dist; this.lastTouchMidX = midX; this.lastTouchMidY = midY;
     } else if (e.touches.length === 1 && this.isDragging) {
       this.offsetX = this.dragStartOffsetX + (e.touches[0].clientX - this.dragStartX);
