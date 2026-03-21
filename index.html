@@ -78,13 +78,10 @@
         align-items: center; justify-content: center; gap: 16px;
         font-size: 14px; color: rgba(180, 190, 255, 0.6); z-index: 100;
       }
-      #loading-spinner {
-        width: 32px; height: 32px;
-        border: 2px solid rgba(120, 140, 255, 0.2);
-        border-top-color: rgba(120, 140, 255, 0.8);
-        border-radius: 50%; animation: spin 1s linear infinite;
+      #loading-percent {
+        font-size: 32px; font-weight: 300; letter-spacing: 0.05em;
+        color: rgba(180, 200, 255, 0.8); font-variant-numeric: tabular-nums;
       }
-      @keyframes spin { to { transform: rotate(360deg); } }
 
       #zoom-hint { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: rgba(180, 190, 255, 0.3); z-index: 10; line-height: 1.8; text-align: right; }
 
@@ -93,8 +90,8 @@
   </head>
   <body>
     <div id="loading">
-      <div id="loading-spinner"></div>
-      <span>Loading Kanji-Verse...</span>
+      <div id="loading-percent">0%</div>
+      <span id="loading-label">Loading…</span>
     </div>
 
     <canvas id="canvas"></canvas>

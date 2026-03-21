@@ -10,8 +10,18 @@ import { loadKanji }            from "../shared/loader";
 import { setupUI }              from "../shared/ui";
 
 async function main() {
-  const loading = document.getElementById("loading")!;
-  const canvas  = document.getElementById("canvas") as HTMLCanvasElement;
+  const loading      = document.getElementById("loading")!;
+  const loadPercent  = document.getElementById("loading-percent")!;
+  const canvas       = document.getElementById("canvas") as HTMLCanvasElement;
+
+  // 進捗: テクスチャ生成(nodes.length) + GPU warmup(nodes.length)
+  let totalWork = 0;
+  let doneWork  = 0;
+  function updateProgress(done: number, _total: number) {
+    doneWork = done;
+    const pct = Math.min(100, Math.round((doneWork / totalWork) * 100));
+    loadPercent.textContent = `${pct}%`;
+  }
 
   let nodes;
   try {
@@ -24,6 +34,9 @@ async function main() {
       </p>`;
     return;
   }
+
+  // 総処理量 = テクスチャ生成 + GPU warmup
+  totalWork = nodes.length * 2;
 
   const { scene, renderer }      = createScene(canvas);
   const { camera, update: updateCamera, startIntroZoom, flyTo } = createCamera(renderer);
@@ -44,9 +57,15 @@ async function main() {
     },
   );
 
-  const proximityLabel = createProximityLabel(camera, nodes);
-  // ローディング中にテクスチャをGPUへ事前転送し、初回zoom時のカクつきを防ぐ
-  proximityLabel.warmup(renderer);
+  // テクスチャ生成（前半50%）
+  const proximityLabel = await createProximityLabel(camera, nodes, (done, total) => {
+    updateProgress(done, total);
+  });
+  // GPU warmup（後半50%）
+  doneWork = nodes.length; // テクスチャ生成完了分をベースに
+  await proximityLabel.warmup(renderer, (done, total) => {
+    updateProgress(nodes.length + done, total);
+  });
 
   loading.style.display = "none";
   startIntroZoom();
