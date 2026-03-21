@@ -48,9 +48,9 @@ async function main() {
     },
   );
 
-  const proximityLabel = createProximityLabel(camera, nodes);
+  const proximityLabel = await createProximityLabel(camera, nodes);
   // ローディング中にテクスチャをGPUへ事前転送し、初回zoom時のカクつきを防ぐ
-  proximityLabel.warmup(renderer);
+  await proximityLabel.warmup(renderer);
 
   loading.style.display = "none";
   startIntroZoom();

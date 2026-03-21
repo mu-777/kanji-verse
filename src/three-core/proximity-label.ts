@@ -19,9 +19,12 @@ export interface ProximityLabel {
   /** composer.render() の直後に呼ぶ。bloom 対象外で上書き描画する。 */
   render(renderer: THREE.WebGLRenderer): void;
   /** ローディング中に呼んでGPUへテクスチャを事前転送する。初回zoom時のカクつきを防ぐ。 */
-  warmup(renderer: THREE.WebGLRenderer): void;
+  warmup(renderer: THREE.WebGLRenderer, onProgress?: (done: number, total: number) => void): Promise<void>;
   dispose(): void;
 }
+
+/** イベントループに制御を返すユーティリティ */
+const yieldToMain = () => new Promise<void>(r => setTimeout(r, 0));
 
 function makeKanjiTexture(char: string, type: number): THREE.CanvasTexture {
   const c = document.createElement("canvas");
@@ -57,10 +60,13 @@ function makeKanjiTexture(char: string, type: number): THREE.CanvasTexture {
   return new THREE.CanvasTexture(c);
 }
 
-export function createProximityLabel(
+const BATCH_SIZE = 64;
+
+export async function createProximityLabel(
   camera: THREE.Camera,
   nodes: KanjiNode[],
-): ProximityLabel {
+  onProgress?: (done: number, total: number) => void,
+): Promise<ProximityLabel> {
   // bloom から完全に分離した専用シーン
   const spriteScene = new THREE.Scene();
 
@@ -76,7 +82,10 @@ export function createProximityLabel(
     return tex;
   }
 
-  const sprites: THREE.Sprite[] = nodes.map(node => {
+  // スプライト生成をバッチ非同期化（テクスチャ生成が重いため）
+  const sprites: THREE.Sprite[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
     const mat = new THREE.SpriteMaterial({
       map:         getTexture(node.k, node.t),
       transparent: true,
@@ -94,8 +103,14 @@ export function createProximityLabel(
     sprite.scale.setScalar(SPRITE_SCALE);
     sprite.visible = false;
     spriteScene.add(sprite);
-    return sprite;
-  });
+    sprites.push(sprite);
+
+    if ((i + 1) % BATCH_SIZE === 0) {
+      onProgress?.(i + 1, nodes.length);
+      await yieldToMain();
+    }
+  }
+  onProgress?.(nodes.length, nodes.length);
 
   let wasVisible = false;
 
@@ -132,10 +147,16 @@ export function createProximityLabel(
     renderer.autoClear = true;
   }
 
-  function warmup(renderer: THREE.WebGLRenderer) {
-    for (const tex of textureCache.values()) {
-      renderer.initTexture(tex);
+  async function warmup(renderer: THREE.WebGLRenderer, onProgress?: (done: number, total: number) => void) {
+    const textures = [...textureCache.values()];
+    for (let i = 0; i < textures.length; i++) {
+      renderer.initTexture(textures[i]);
+      if ((i + 1) % BATCH_SIZE === 0) {
+        onProgress?.(i + 1, textures.length);
+        await yieldToMain();
+      }
     }
+    onProgress?.(textures.length, textures.length);
   }
 
   return {
