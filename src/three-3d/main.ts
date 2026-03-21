@@ -18,7 +18,7 @@ async function main() {
   const canvas       = document.getElementById("canvas") as HTMLCanvasElement;
 
   // バー幅をテキスト幅の1.5倍に設定
-  loadBarTrack.style.width = `${loadText.offsetWidth * 1.5}px`;
+  loadBarTrack.style.width = `${loadText.offsetWidth * 0.7}px`;
 
   // 進捗: テクスチャ生成(nodes.length) + GPU warmup(nodes.length)
   let totalWork = 0;
