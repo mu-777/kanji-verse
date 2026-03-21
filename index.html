@@ -75,12 +75,23 @@
 
       #loading {
         position: fixed; inset: 0; display: flex; flex-direction: column;
-        align-items: center; justify-content: center; gap: 16px;
+        align-items: center; justify-content: center; gap: 12px;
         font-size: 14px; color: rgba(180, 190, 255, 0.6); z-index: 100;
       }
+      #loading-text {
+        display: flex; align-items: baseline; gap: 8px;
+      }
       #loading-percent {
-        font-size: 32px; font-weight: 300; letter-spacing: 0.05em;
-        color: rgba(180, 200, 255, 0.8); font-variant-numeric: tabular-nums;
+        font-variant-numeric: tabular-nums;
+      }
+      #loading-bar-track {
+        /* 幅は JS で "Loading Kanji-Verse..." の幅 × 1.5 に設定 */
+        height: 2px; background: rgba(120, 140, 255, 0.15); border-radius: 1px;
+        overflow: hidden;
+      }
+      #loading-bar-fill {
+        height: 100%; width: 0%; background: rgba(120, 140, 255, 0.6);
+        border-radius: 1px; transition: width 0.1s linear;
       }
 
       #zoom-hint { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: rgba(180, 190, 255, 0.3); z-index: 10; line-height: 1.8; text-align: right; }
@@ -90,8 +101,13 @@
   </head>
   <body>
     <div id="loading">
-      <div id="loading-percent">0%</div>
-      <span id="loading-label">Loading…</span>
+      <div id="loading-text">
+        <span>Loading Kanji-Verse...</span>
+        <span id="loading-percent">0%</span>
+      </div>
+      <div id="loading-bar-track">
+        <div id="loading-bar-fill"></div>
+      </div>
     </div>
 
     <canvas id="canvas"></canvas>
