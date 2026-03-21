@@ -12,7 +12,13 @@ import { setupUI }              from "../shared/ui";
 async function main() {
   const loading      = document.getElementById("loading")!;
   const loadPercent  = document.getElementById("loading-percent")!;
+  const loadText     = document.getElementById("loading-text")!;
+  const loadBarTrack = document.getElementById("loading-bar-track")!;
+  const loadBarFill  = document.getElementById("loading-bar-fill")!;
   const canvas       = document.getElementById("canvas") as HTMLCanvasElement;
+
+  // バー幅をテキスト幅の1.5倍に設定
+  loadBarTrack.style.width = `${loadText.offsetWidth * 1.5}px`;
 
   // 進捗: テクスチャ生成(nodes.length) + GPU warmup(nodes.length)
   let totalWork = 0;
@@ -21,6 +27,7 @@ async function main() {
     doneWork = done;
     const pct = Math.min(100, Math.round((doneWork / totalWork) * 100));
     loadPercent.textContent = `${pct}%`;
+    loadBarFill.style.width = `${pct}%`;
   }
 
   let nodes;
