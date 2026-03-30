@@ -59,7 +59,7 @@ async function main() {
       kanjiPoints.updateHighlight(
         interaction.hoveredNode,
         interaction.selectedNode,
-        interaction.searchNode,
+        interaction.searchNodes,
       );
     },
   );
@@ -75,6 +75,22 @@ async function main() {
   });
 
   loading.style.display = "none";
+
+  // B: 初回訪問時にウェルカムオーバーレイを表示
+  if (!localStorage.getItem("kv_welcomed")) {
+    const welcome = document.getElementById("welcome")!;
+    welcome.style.display = "flex";
+    const dismiss = () => {
+      welcome.classList.add("hidden");
+      welcome.addEventListener("transitionend", () => {
+        welcome.style.display = "none";
+      }, { once: true });
+      localStorage.setItem("kv_welcomed", "1");
+    };
+    document.getElementById("welcome-btn")!.addEventListener("click", dismiss);
+    document.addEventListener("keydown", dismiss, { once: true });
+  }
+
   startIntroZoom();
 
   function nodeWorldPos(n: { x: number; y: number; z?: number }): THREE.Vector3 {
@@ -97,6 +113,7 @@ async function main() {
       }
       return found;
     },
+    searchByMeaning: (q) => interaction.searchByMeaning(q),
     clearSearch: () => interaction.clearSearch(),
     setFilter:  (f) => {
       interaction.setFilter(f.joyo, f.jinmei);
@@ -105,6 +122,16 @@ async function main() {
     get onSelect() { return interaction.onSelect; },
     set onSelect(fn) { interaction.onSelect = fn; },
   });
+
+  // C: URLパラメーターで漢字が指定されていれば即座にジャンプ
+  const urlKanji = new URLSearchParams(window.location.search).get("k");
+  if (urlKanji) {
+    const found = interaction.search(urlKanji);
+    if (found && interaction.searchNode) {
+      flyTo(nodeWorldPos(interaction.searchNode));
+      interaction.selectNode(interaction.searchNode);
+    }
+  }
 
   // レンダーループ
   let prev = performance.now();

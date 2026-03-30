@@ -5,10 +5,17 @@ import { WORLD_SCALE } from "./points";
 export interface InteractionBundle {
   hoveredNode:  KanjiNode | null;
   selectedNode: KanjiNode | null;
+  /** 単一漢字検索のターゲット（flyTo に使う） */
   searchNode:   KanjiNode | null;
+  /** レンダリング用のハイライト対象（単一・複数共通） */
+  searchNodes:  Set<KanjiNode>;
   search(kanji: string): boolean;
+  /** 英語意味での部分一致検索。ヒットしたノードをすべてハイライトし件数を返す */
+  searchByMeaning(query: string): number;
   clearSearch(): void;
   setFilter(joyo: boolean, jinmei: boolean): void;
+  /** URLパラメーターなど外部からノードを選択状態にする */
+  selectNode(node: KanjiNode): void;
   onSelect: (node: KanjiNode | null) => void;
   /** ポップアップ表示中に同じノードを再クリックしたとき呼ばれる。flyTo などに使う。 */
   onFlyTo: (node: KanjiNode) => void;
@@ -31,6 +38,7 @@ export function createInteraction(
   let hoveredNode:  KanjiNode | null = null;
   let selectedNode: KanjiNode | null = null;
   let searchNode:   KanjiNode | null = null;
+  let searchNodes:  Set<KanjiNode>   = new Set();
   let filterJoyo   = true;
   let filterJinmei = true;
 
@@ -41,19 +49,39 @@ export function createInteraction(
     get hoveredNode()  { return hoveredNode; },
     get selectedNode() { return selectedNode; },
     get searchNode()   { return searchNode; },
+    get searchNodes()  { return searchNodes; },
     onSelect: () => {},
     onFlyTo: () => {},
 
     search(kanji: string): boolean {
-      if (!kanji) { searchNode = null; onHighlightChange(); return false; }
+      if (!kanji) { searchNode = null; searchNodes = new Set(); onHighlightChange(); return false; }
       const node = nodes.find((n) => n.k === kanji);
-      if (!node) { searchNode = null; onHighlightChange(); return false; }
+      if (!node) { searchNode = null; searchNodes = new Set(); onHighlightChange(); return false; }
       searchNode = node;
+      searchNodes = new Set([node]);
       onHighlightChange();
       return true;
     },
 
-    clearSearch() { searchNode = null; onHighlightChange(); },
+    searchByMeaning(query: string): number {
+      const q = query.toLowerCase().trim();
+      if (!q) { searchNode = null; searchNodes = new Set(); onHighlightChange(); return 0; }
+      const results = nodes.filter((n) =>
+        n.m.some((meaning) => meaning.toLowerCase().includes(q)),
+      );
+      searchNode = null;
+      searchNodes = new Set(results);
+      onHighlightChange();
+      return results.length;
+    },
+
+    clearSearch() { searchNode = null; searchNodes = new Set(); onHighlightChange(); },
+
+    selectNode(node: KanjiNode) {
+      selectedNode = node;
+      bundle.onSelect(node);
+      onHighlightChange();
+    },
 
     setFilter(joyo: boolean, jinmei: boolean) {
       filterJoyo   = joyo;

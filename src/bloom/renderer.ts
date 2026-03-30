@@ -108,6 +108,8 @@ export class BloomRenderer {
     return true;
   }
 
+  searchByMeaning(_query: string): number { return 0; }
+
   clearSearch() { this.searchNode = null; }
 
   private resize() {
