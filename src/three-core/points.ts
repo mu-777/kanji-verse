@@ -47,7 +47,7 @@ export interface KanjiPoints {
   updateHighlight(
     hovered:  KanjiNode | null,
     selected: KanjiNode | null,
-    searched: KanjiNode | null,
+    searched: Set<KanjiNode>,
   ): void;
   /** フィルタ変更時に呼ぶ */
   updateFilter(joyo: boolean, jinmei: boolean): void;
@@ -97,20 +97,20 @@ export function createKanjiPoints(nodes: KanjiNode[]): KanjiPoints {
   // 前回の状態を保持（差分更新のため）
   let prevHovered:  KanjiNode | null = null;
   let prevSelected: KanjiNode | null = null;
-  let prevSearched: KanjiNode | null = null;
+  let prevSearched: Set<KanjiNode>   = new Set();
 
   function applyNodeStyle(
     i: number,
     node: KanjiNode,
     hovered:  KanjiNode | null,
     selected: KanjiNode | null,
-    searched: KanjiNode | null,
+    searched: Set<KanjiNode>,
     colorAttr: THREE.BufferAttribute,
     sizeAttr:  THREE.BufferAttribute,
   ) {
     let c: THREE.Color;
     let s: number;
-    if (node === searched)       { c = COLOR_SEARCH; s = 8; }
+    if (searched.has(node))      { c = COLOR_SEARCH; s = 8; }
     else if (node === selected)  { c = COLOR_HOVER;  s = 8; }
     else if (node === hovered)   { c = COLOR_HOVER;  s = 6; }
     else {
@@ -124,18 +124,22 @@ export function createKanjiPoints(nodes: KanjiNode[]): KanjiPoints {
   function updateHighlight(
     hovered:  KanjiNode | null,
     selected: KanjiNode | null,
-    searched: KanjiNode | null,
+    searched: Set<KanjiNode>,
   ) {
     const colorAttr = geometry.getAttribute("aColor") as THREE.BufferAttribute;
     const sizeAttr  = geometry.getAttribute("aSize")  as THREE.BufferAttribute;
 
     // 変化があったノードのインデックスだけ収集
     const dirty = new Set<number>();
-    for (const node of [prevHovered, prevSelected, prevSearched, hovered, selected, searched]) {
+    for (const node of [prevHovered, prevSelected, hovered, selected]) {
       if (node !== null) {
         const i = nodeIndex.get(node);
         if (i !== undefined) dirty.add(i);
       }
+    }
+    for (const node of [...prevSearched, ...searched]) {
+      const i = nodeIndex.get(node);
+      if (i !== undefined) dirty.add(i);
     }
 
     prevHovered  = hovered;

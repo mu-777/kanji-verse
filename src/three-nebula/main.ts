@@ -43,7 +43,7 @@ async function main() {
       kanjiPoints.updateHighlight(
         interaction.hoveredNode,
         interaction.selectedNode,
-        interaction.searchNode,
+        interaction.searchNodes,
       );
     },
   );
@@ -56,9 +56,10 @@ async function main() {
   startIntroZoom();
 
   setupUI({
-    search:      (k) => interaction.search(k),
-    clearSearch: () => interaction.clearSearch(),
-    setFilter:   (f) => {
+    search:          (k) => interaction.search(k),
+    searchByMeaning: (q) => interaction.searchByMeaning(q),
+    clearSearch:     () => interaction.clearSearch(),
+    setFilter:       (f) => {
       interaction.setFilter(f.joyo, f.jinmei);
       kanjiPoints.updateFilter(f.joyo, f.jinmei);
     },

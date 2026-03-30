@@ -71,6 +71,8 @@ export class KanjiRenderer {
     return true;
   }
 
+  searchByMeaning(_query: string): number { return 0; }
+
   clearSearch() {
     this.searchNode = null;
     this.requestRender();

@@ -115,6 +115,39 @@
 
       #zoom-hint { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: rgba(180, 190, 255, 0.3); z-index: 10; line-height: 1.8; text-align: right; }
 
+      #search-count { font-size: 11px; color: rgba(180, 190, 255, 0.45); white-space: nowrap; min-width: 56px; }
+
+      /* B: ウェルカムオーバーレイ */
+      #welcome {
+        display: none;
+        position: fixed; inset: 0;
+        align-items: center; justify-content: center;
+        background: rgba(3, 3, 15, 0.7);
+        backdrop-filter: blur(6px);
+        z-index: 200;
+        opacity: 1; transition: opacity 0.4s ease;
+      }
+      #welcome.hidden { opacity: 0; }
+      #welcome-box {
+        background: rgba(8, 8, 28, 0.95);
+        border: 1px solid rgba(120, 140, 255, 0.3);
+        border-radius: 20px; padding: 40px 48px;
+        text-align: center; max-width: 420px;
+        width: calc(100vw - 48px);
+      }
+      #welcome-title { font-size: 28px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 20px; color: #e0e4ff; }
+      #welcome-desc { font-size: 15px; line-height: 1.8; color: rgba(200, 210, 255, 0.8); margin-bottom: 12px; }
+      #welcome-hint { font-size: 13px; line-height: 1.8; color: rgba(180, 190, 255, 0.5); margin-bottom: 32px; }
+      #welcome-hint .dim { color: rgba(200, 210, 255, 0.75); font-style: italic; }
+      #welcome-btn {
+        background: rgba(120, 140, 255, 0.15);
+        border: 1px solid rgba(120, 140, 255, 0.4);
+        border-radius: 24px; padding: 10px 32px;
+        color: #e0e4ff; font-size: 14px; cursor: pointer;
+        font-family: inherit; letter-spacing: 0.05em;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      #welcome-btn:hover { background: rgba(120, 140, 255, 0.25); border-color: rgba(120, 140, 255, 0.6); }
 
     </style>
   </head>
@@ -132,7 +165,8 @@
     <canvas id="canvas"></canvas>
 
     <div id="search-bar">
-      <input id="search-input" type="text" placeholder="🔍 Search one kanji" maxlength="1" autocomplete="off" />
+      <input id="search-input" type="text" placeholder="🔍 kanji or meaning" autocomplete="off" />
+      <span id="search-count"></span>
     </div>
 
     <div id="filter-bar">
@@ -163,6 +197,19 @@
 
 
     <div id="zoom-hint">Drag: rotate<br>Scroll: zoom</div>
+
+    <!-- B: ウェルカムオーバーレイ（表示制御は main.ts で行う） -->
+    <div id="welcome">
+      <div id="welcome-box">
+        <div id="welcome-title">Kanji-Verse</div>
+        <p id="welcome-desc">~2,800 Japanese kanji arranged by meaning.<br>Similar concepts cluster together in space.</p>
+        <p id="welcome-hint">
+          Search by kanji <span class="dim">愛</span> or English <span class="dim">love</span><br>
+          Click any star to see its readings and meaning.
+        </p>
+        <button id="welcome-btn">Explore →</button>
+      </div>
+    </div>
 
     <script type="module" src="/src/three-3d/main.ts"></script>
   </body>

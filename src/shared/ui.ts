@@ -3,6 +3,7 @@ import { toRomaji } from "./romanize";
 
 export interface UIRenderer {
   search(kanji: string): boolean;
+  searchByMeaning(query: string): number;
   clearSearch(): void;
   setFilter(filter: FilterState): void;
   onSelect: (node: KanjiNode | null) => void;
@@ -19,7 +20,11 @@ export function setupUI(renderer: UIRenderer): void {
   const panelClose = document.getElementById("detail-close")!;
 
   renderer.onSelect = (node: KanjiNode | null) => {
-    if (!node) { panel.classList.remove("visible"); return; }
+    if (!node) {
+      panel.classList.remove("visible");
+      history.replaceState({}, "", window.location.pathname);
+      return;
+    }
     const fmt = (readings: string[]) =>
       readings.length
         ? readings.map((r) => `${r} (${toRomaji(r)})`).join(" · ")
@@ -30,6 +35,8 @@ export function setupUI(renderer: UIRenderer): void {
     panelKun.textContent = fmt(node.kun);
     panelMeanings.textContent = node.m.join(", ");
     panel.classList.add("visible");
+    // C: 選択中の漢字をURLに反映
+    history.replaceState({}, "", `?k=${encodeURIComponent(node.k)}`);
   };
 
   panelClose.addEventListener("click", () => {
@@ -39,15 +46,33 @@ export function setupUI(renderer: UIRenderer): void {
 
   // ── 検索 ──
   const searchInput = document.getElementById("search-input") as HTMLInputElement;
+  const searchCount = document.getElementById("search-count")!;
+
+  function isAsciiQuery(val: string): boolean {
+    return /^[a-zA-Z\s]+$/.test(val);
+  }
+
   searchInput.addEventListener("input", () => {
     const val = searchInput.value.trim();
-    if (!val) { renderer.clearSearch(); return; }
-    renderer.search(val);
+    if (!val) {
+      renderer.clearSearch();
+      searchCount.textContent = "";
+      return;
+    }
+    if (isAsciiQuery(val)) {
+      const count = renderer.searchByMeaning(val);
+      searchCount.textContent = count > 0 ? `${count} kanji` : "no match";
+    } else {
+      const found = renderer.search(val);
+      searchCount.textContent = found ? "" : "not found";
+    }
   });
+
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       searchInput.value = "";
       renderer.clearSearch();
+      searchCount.textContent = "";
       searchInput.blur();
     }
   });
