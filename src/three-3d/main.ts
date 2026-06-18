@@ -76,8 +76,12 @@ async function main() {
 
   loading.style.display = "none";
 
-  // B: 初回訪問時にウェルカムオーバーレイを表示
-  if (!localStorage.getItem("kv_welcomed")) {
+  // B: 前回の訪問から3日以上あいた場合（初回含む）ウェルカムオーバーレイを表示。
+  //    localStorage には有効期限がないため、最終訪問時刻を保存して自前で判定する。
+  const WELCOME_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000; // 3日
+  const now = Date.now();
+  const lastVisit = Number(localStorage.getItem("kv_last_visit"));
+  if (!lastVisit || now - lastVisit > WELCOME_INTERVAL_MS) {
     const welcome = document.getElementById("welcome")!;
     welcome.style.display = "flex";
     const dismiss = () => {
@@ -85,11 +89,12 @@ async function main() {
       welcome.addEventListener("transitionend", () => {
         welcome.style.display = "none";
       }, { once: true });
-      localStorage.setItem("kv_welcomed", "1");
     };
     document.getElementById("welcome-btn")!.addEventListener("click", dismiss);
     document.addEventListener("keydown", dismiss, { once: true });
   }
+  // 今回の訪問時刻を記録（次回の表示判定の基準）。表示有無に関わらず常に更新する。
+  localStorage.setItem("kv_last_visit", String(now));
 
   startIntroZoom();
 
