@@ -208,7 +208,7 @@ export class KanjiRenderer {
     ctx.textBaseline = "middle";
 
     if (labelAlpha > 0) {
-      ctx.font = `${fontScreenSize / scale}px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
+      ctx.font = `200 ${fontScreenSize / scale}px "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
       for (const node of this.nodes) {
         if (!this.isVisible(node)) continue;
         if (node === this.hoveredNode || node === this.selectedNode || node === this.searchNode) continue;
@@ -221,7 +221,7 @@ export class KanjiRenderer {
       }
     }
 
-    ctx.font = `bold ${specialFontScreenSize / scale}px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
+    ctx.font = `200 ${specialFontScreenSize / scale}px "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
     const specialNodes = [this.hoveredNode, this.selectedNode, this.searchNode];
     for (const node of specialNodes) {
       if (!node || !this.isVisible(node)) continue;

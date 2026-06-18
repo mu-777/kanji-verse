@@ -283,7 +283,7 @@ export class BloomRenderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     if (labelAlpha > 0) {
-      ctx.font = `${fontScreenSize / scale}px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
+      ctx.font = `200 ${fontScreenSize / scale}px "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
       for (const node of this.nodes) {
         if (!this.isVisible(node)) continue;
         if (node === this.hoveredNode || node === this.selectedNode || node === this.searchNode) continue;
@@ -300,7 +300,7 @@ export class BloomRenderer {
     ctx.globalAlpha = 1;
 
     // Pass 3: 特殊ノード（ホバー・選択・検索）
-    ctx.font = `bold ${specialFontScreenSize / scale}px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
+    ctx.font = `200 ${specialFontScreenSize / scale}px "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
     ctx.textBaseline = "bottom";
     for (const node of [this.hoveredNode, this.selectedNode, this.searchNode]) {
       if (!node || !this.isVisible(node)) continue;

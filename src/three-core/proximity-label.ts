@@ -33,7 +33,7 @@ function makeKanjiTexture(char: string, type: number): THREE.CanvasTexture {
   const ctx = c.getContext("2d")!;
 
   const fontSize = TEX_SIZE * FONT_RATIO;
-  ctx.font         = `${fontSize}px "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif`;
+  ctx.font         = `200 ${fontSize}px "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
 
