@@ -1,7 +1,7 @@
 /**
  * OGP画像生成スクリプト
  *
- * kanji-2d.json の座標データを使って、夜空風の漢字ビジュアライゼーション画像を生成する。
+ * kanji-3d.json の座標データ（x, y 平面）を使って、夜空風の漢字ビジュアライゼーション画像を生成する。
  * 出力: public/ogp.png (1200x630)
  *
  * Usage: npx tsx scripts/generate-ogp.mts
@@ -36,7 +36,7 @@ interface KanjiEntry {
 }
 
 // --- Main ---
-const dataPath = resolve(__dirname, "../public/data/kanji-2d.json");
+const dataPath = resolve(__dirname, "../public/data/kanji-3d.json");
 const outPath = resolve(__dirname, "../public/ogp.png");
 
 const kanji: KanjiEntry[] = JSON.parse(readFileSync(dataPath, "utf8"));

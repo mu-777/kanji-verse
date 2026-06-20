@@ -4,8 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#05050f" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-E6F07KS3MG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-E6F07KS3MG');
+    </script>
+
     <title>Kanji-Verse</title>
     <meta name="description" content="Thousands of Japanese kanji floating in space — similar meanings, closer together. Drift among them and see what you discover." />
+
+    <!-- Favicon: 漢字宇宙（Kanji-Verse の語源）を発光する星のクラスタとして描いたタイル -->
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 
     <!-- OGP -->
     <meta property="og:title" content="Kanji-Verse" />
@@ -23,6 +39,14 @@
     <meta name="twitter:title" content="Kanji-Verse" />
     <meta name="twitter:description" content="Thousands of Japanese kanji floating in space — similar meanings, closer together. Drift among them and see what you discover." />
     <meta name="twitter:image" content="https://mu-777.github.io/kanji-verse/ogp.png" />
+
+    <!-- Inter (ExtraLight/Light, optical size 18) — ウェルカムオーバーレイのタイポグラフィ用 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200;14..32,300&display=swap"
+      rel="stylesheet"
+    />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html { overflow: hidden; }
@@ -92,10 +116,20 @@
       #detail-meanings { font-size: 13px; color: rgba(200, 210, 255, 0.85); text-align: center; line-height: 1.8; border-top: 1px solid rgba(120, 140, 255, 0.15); padding-top: 10px; }
       #detail-close { position: absolute; top: 10px; right: 14px; background: none; border: none; color: rgba(180, 190, 255, 0.5); font-size: 18px; cursor: pointer; font-family: inherit; }
 
+      /* ローディングも OGP の世界観に合わせて Inter ExtraLight・大文字・ワイドトラッキング・グロー */
       #loading {
         position: fixed; inset: 0; display: flex; flex-direction: column;
-        align-items: center; justify-content: center; gap: 12px;
-        font-size: 14px; color: rgba(180, 190, 255, 0.6); z-index: 100;
+        align-items: center; justify-content: center; gap: 16px;
+        font-family: "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+        font-weight: 200;
+        font-optical-sizing: none;
+        font-variation-settings: "opsz" 18;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.6em;
+        color: rgba(190, 200, 255, 0.7);
+        text-shadow: 0 0 18px rgba(180, 200, 255, 0.35);
+        z-index: 100;
       }
       #loading-text {
         display: flex; align-items: baseline; gap: 8px;
@@ -104,20 +138,21 @@
         font-variant-numeric: tabular-nums;
       }
       #loading-bar-track {
-        /* 幅は JS で "Loading Kanji-Verse..." の幅 × 1.5 に設定 */
+        /* 幅は JS で loading-text の幅 × 0.7 に設定（フォント確定後に測定） */
         height: 2px; background: rgba(120, 140, 255, 0.15); border-radius: 1px;
         overflow: hidden;
       }
       #loading-bar-fill {
-        height: 100%; width: 0%; background: rgba(120, 140, 255, 0.6);
+        height: 100%; width: 0%; background: rgba(150, 170, 255, 0.7);
         border-radius: 1px; transition: width 0.1s linear;
+        box-shadow: 0 0 8px rgba(150, 170, 255, 0.5);
       }
 
       #zoom-hint { position: fixed; bottom: 20px; right: 20px; font-size: 11px; color: rgba(180, 190, 255, 0.3); z-index: 10; line-height: 1.8; text-align: right; }
 
       #search-count { font-size: 11px; color: rgba(180, 190, 255, 0.45); white-space: nowrap; min-width: 56px; }
 
-      /* B: ウェルカムオーバーレイ */
+      /* B: ウェルカムオーバーレイ — OGP画像の雰囲気を踏襲（Inter ExtraLight / 横罫 / グロー） */
       #welcome {
         display: none;
         position: fixed; inset: 0;
@@ -126,28 +161,58 @@
         backdrop-filter: blur(6px);
         z-index: 200;
         opacity: 1; transition: opacity 0.4s ease;
+        /* Inter は欧文用。漢字（例: 愛）は CJK フォントへフォールバックさせる */
+        font-family: "Inter", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
       }
       #welcome.hidden { opacity: 0; }
       #welcome-box {
-        background: rgba(8, 8, 28, 0.95);
-        border: 1px solid rgba(120, 140, 255, 0.3);
-        border-radius: 20px; padding: 40px 48px;
-        text-align: center; max-width: 420px;
+        background: rgba(6, 6, 20, 0.72);
+        border: 1px solid rgba(140, 160, 255, 0.18);
+        border-radius: 20px; padding: 52px 40px;
+        text-align: center; max-width: 600px;
         width: calc(100vw - 48px);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 80px rgba(80, 100, 200, 0.15),
+                    inset 0 0 60px rgba(80, 100, 200, 0.05);
       }
-      #welcome-title { font-size: 28px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 20px; color: #e0e4ff; }
-      #welcome-desc { font-size: 15px; line-height: 1.8; color: rgba(200, 210, 255, 0.8); margin-bottom: 12px; }
-      #welcome-hint { font-size: 13px; line-height: 1.8; color: rgba(180, 190, 255, 0.5); margin-bottom: 32px; }
-      #welcome-hint .dim { color: rgba(200, 210, 255, 0.75); font-style: italic; }
+      /* タイトル: OGP と同じ Inter 18pt ExtraLight・大文字・ワイドトラッキング・両脇に横罫 */
+      #welcome-title {
+        display: flex; align-items: center; justify-content: center; gap: 12px;
+        font-weight: 200;
+        font-optical-sizing: none;
+        font-variation-settings: "opsz" 18;
+        text-transform: uppercase;
+        font-size: clamp(13px, 3.5vw, 22px);
+        letter-spacing: 0.9em;
+        white-space: nowrap;
+        color: #e0e4ff;
+        text-shadow: 0 0 28px rgba(180, 200, 255, 0.45);
+        margin-bottom: 24px;
+      }
+      /* 末尾の letter-spacing 分を打ち消し、左右の横罫を対称に保つ */
+      #welcome-title span { letter-spacing: 0.9em; margin-right: -0.9em; }
+      #welcome-title::before, #welcome-title::after {
+        content: ""; flex: 0 1 34px; min-width: 0; height: 1px;
+        background: linear-gradient(to right, rgba(160, 180, 255, 0), rgba(160, 180, 255, 0.5));
+      }
+      #welcome-title::after { transform: scaleX(-1); }
+      #welcome-desc { font-weight: 300; font-size: 15px; line-height: 1.9; letter-spacing: 0.01em; color: rgba(205, 214, 255, 0.82); margin-bottom: 14px; }
+      #welcome-hint { font-weight: 300; font-size: 13px; line-height: 1.9; color: rgba(180, 190, 255, 0.5); margin-bottom: 34px; }
+      #welcome-hint .dim { color: rgba(205, 214, 255, 0.78); }
       #welcome-btn {
-        background: rgba(120, 140, 255, 0.15);
-        border: 1px solid rgba(120, 140, 255, 0.4);
-        border-radius: 24px; padding: 10px 32px;
-        color: #e0e4ff; font-size: 14px; cursor: pointer;
-        font-family: inherit; letter-spacing: 0.05em;
-        transition: background 0.2s, border-color 0.2s;
+        background: rgba(120, 140, 255, 0.12);
+        border: 1px solid rgba(140, 160, 255, 0.35);
+        border-radius: 24px; padding: 11px 34px;
+        color: #e0e4ff; font-size: 13px; cursor: pointer;
+        font-family: inherit; font-weight: 300;
+        text-transform: uppercase; letter-spacing: 0.2em;
+        transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
       }
-      #welcome-btn:hover { background: rgba(120, 140, 255, 0.25); border-color: rgba(120, 140, 255, 0.6); }
+      #welcome-btn:hover {
+        background: rgba(120, 140, 255, 0.22);
+        border-color: rgba(160, 180, 255, 0.6);
+        box-shadow: 0 0 24px rgba(120, 140, 255, 0.25);
+      }
 
     </style>
   </head>
@@ -201,7 +266,7 @@
     <!-- B: ウェルカムオーバーレイ（表示制御は main.ts で行う） -->
     <div id="welcome">
       <div id="welcome-box">
-        <div id="welcome-title">Kanji-Verse</div>
+        <div id="welcome-title"><span>Kanji-Verse</span></div>
         <p id="welcome-desc">~2,800 Japanese kanji arranged by meaning.<br>Similar concepts cluster together in space.</p>
         <p id="welcome-hint">
           Search by kanji <span class="dim">愛</span> or English <span class="dim">love</span><br>

@@ -2,19 +2,15 @@
 kanji-verse データ生成スクリプト
 
 KanjiDic2 から常用漢字・人名用漢字の意味を取得し、
-SentenceTransformer でEmbeddingを計算、UMAPで座標化して
-public/data/kanji-2d.json / kanji-3d.json を生成する。
+SentenceTransformer でEmbeddingを計算、UMAPで3D座標化して
+public/data/kanji-3d.json を生成する。
 
 実行方法:
   cd scripts
   uv sync
-  uv run python generate_data.py           # 2D + 3D 両方生成（デフォルト）
-  uv run python generate_data.py --dim 2   # 2D のみ
-  uv run python generate_data.py --dim 3   # 3D のみ
-  uv run python generate_data.py --dim both  # 両方（デフォルトと同じ）
+  uv run python generate_data.py
 """
 
-import argparse
 import gzip
 import json
 import os
@@ -141,23 +137,21 @@ def compute_clusters(coords_3d):
     return labels
 
 
-def save_json(entries, coords, cluster_ids, path, n_components: int):
+def save_json(entries, coords, cluster_ids, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     output = []
     for i, entry in enumerate(entries):
-        node = {
+        output.append({
             "k": entry["kanji"],
             "m": entry["meanings"],
             "on": entry["on"],
             "kun": entry["kun"],
             "x": round(float(coords[i][0]), 4),
             "y": round(float(coords[i][1]), 4),
+            "z": round(float(coords[i][2]), 4),
             "t": 0 if entry["type"] == "joyo" else 1,
             "c": int(cluster_ids[i]),
-        }
-        if n_components == 3:
-            node["z"] = round(float(coords[i][2]), 4)
-        output.append(node)
+        })
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, separators=(",", ":"))
@@ -167,33 +161,15 @@ def save_json(entries, coords, cluster_ids, path, n_components: int):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="kanji-verse データ生成")
-    parser.add_argument(
-        "--dim",
-        choices=["2", "3", "both"],
-        default="both",
-        help="出力する座標の次元数 (デフォルト: both)",
-    )
-    args = parser.parse_args()
-    need_2d = args.dim in ("2", "both")
-    need_3d = args.dim in ("3", "both")
-
     download_kanjidic2()
     entries = parse_kanjidic2()
     embeddings = compute_embeddings(entries)
 
-    # 3D UMAP は常に計算（クラスタリングに使用）
     coords_3d = compute_umap(embeddings, n_components=3)
     cluster_ids = compute_clusters(coords_3d)
 
-    if need_3d:
-        path_3d = os.path.join(OUTPUT_DIR, "kanji-3d.json")
-        save_json(entries, coords_3d, cluster_ids, path_3d, n_components=3)
-
-    if need_2d:
-        coords_2d = compute_umap(embeddings, n_components=2)
-        path_2d = os.path.join(OUTPUT_DIR, "kanji-2d.json")
-        save_json(entries, coords_2d, cluster_ids, path_2d, n_components=2)
+    path_3d = os.path.join(OUTPUT_DIR, "kanji-3d.json")
+    save_json(entries, coords_3d, cluster_ids, path_3d)
 
     print("\n完了。次のコマンドでWebアプリを起動してください:")
     print("  npm run dev")

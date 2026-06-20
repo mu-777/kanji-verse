@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import { resolve } from "path";
 import compression from "vite-plugin-compression";
 
 export default defineConfig({
@@ -14,14 +13,5 @@ export default defineConfig({
     compression(),           // gzip (.gz)
     compression({ algorithm: "brotliCompress", ext: ".br" }),  // brotli (.br)
   ],
-  build: {
-    rollupOptions: {
-      input: {
-        index:          resolve(__dirname, "index.html"),
-        "2d":           resolve(__dirname, "pages/2d/index.html"),
-        "2d-bloom":     resolve(__dirname, "pages/2d-bloom/index.html"),
-        "three-nebula": resolve(__dirname, "pages/three-nebula/index.html"),
-      },
-    },
-  },
+  // エントリはルート index.html（three-3d バリアント）のみ。Vite のデフォルトエントリに任せる。
 });

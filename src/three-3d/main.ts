@@ -17,8 +17,12 @@ async function main() {
   const loadBarFill  = document.getElementById("loading-bar-fill")!;
   const canvas       = document.getElementById("canvas") as HTMLCanvasElement;
 
-  // バー幅をテキスト幅の1.5倍に設定
-  loadBarTrack.style.width = `${loadText.offsetWidth * 0.7}px`;
+  // バー幅をテキスト幅の0.7倍に設定。
+  // Web フォント(Inter)確定後に測らないとフォールバック基準の幅になりズレる。
+  // ただしデータ読み込みはブロックしたくないので await せず非同期で設定する。
+  document.fonts.ready.then(() => {
+    loadBarTrack.style.width = `${loadText.offsetWidth * 0.7}px`;
+  });
 
   // 進捗: テクスチャ生成(nodes.length) + GPU warmup(nodes.length)
   let totalWork = 0;
