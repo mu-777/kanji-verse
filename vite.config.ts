@@ -7,6 +7,7 @@ export default defineConfig({
     watch: {
       // WSL2 で /mnt/c/ 配下を監視する場合、inotify が機能しないためポーリングが必要
       usePolling: true,
+      interval: 100,
     },
   },
   plugins: [

@@ -1,7 +1,7 @@
 # プロジェクトコンテキスト
 
 ## 最終更新
-2026-06-21
+2026-06-22
 
 ## プロジェクトの目的
 人名に使える漢字（常用漢字2136字 + 人名用漢字649字 = 2785字）を
@@ -68,8 +68,7 @@ src/
 - **dev サーバが `/mnt/c` 上で遅い**: WSL2 が Windows ドライブを 9P 越しに読むため、Vite のコールド最適化・モジュール変換が極端に遅い（初回数十秒）。根本対策は WSL2 ネイティブFS（`~/...`）への移設。
 - GitHub Pages デプロイ設定（base: "/kanji-verse/"）は仮。リポジトリ名に合わせて要変更
 - `scripts/generate-ogp.mts` は現行の `public/ogp.png` を再現しない（コミット版は `bold 64px IPAGothic`・和文サブタイトルだが、実画像は Inter ExtraLight の大文字「KANJI-VERSE」＋横罫＋英語タグライン）。画像は別バージョンで生成されたままスクリプトが更新されていない。OGP を作り直す際は要同期。なお参照データは 2026-06-21 に kanji-3d.json（x,y 平面）へ変更済みのため、再生成時の星空配置は旧 2D とは異なる。
-- README.md が旧 2D Canvas アプリ（`kanji.json`・Canvas 2D・存在しない `src/renderer.ts`/`src/main.ts`）の記述のまま陳腐化。3D 単一構成に合わせた全面更新が必要。
-  - 関連: ウェルカムオーバーレイ（index.html）はこの実画像の世界観（Inter 18pt ExtraLight）に合わせて2026-06-21に刷新済み。
+- ~~README.md が旧 2D Canvas アプリの記述のまま陳腐化~~ → 2026-06-22 に現状の 3D 単一構成（Three.js + UMAP 3D + K-means、`kanji-3d.json`、デプロイは `master` ブランチ、URL末尾 `/kanji-verse/` 必須など）へ全面更新済み。
 - **GA に localhost のテストアクセスが計上される**（ADR-0005。ガード不要の判断）。dev/preview での動作確認分も混ざるため、GA の数値は実数でなく傾向として扱う。気になったら GA4 の「内部トラフィック除外」フィルタで後から対処可能。
 
 ## スコープ外（明示的にやらないこと）
