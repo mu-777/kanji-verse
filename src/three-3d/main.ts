@@ -95,6 +95,24 @@ async function main() {
     document.addEventListener("keydown", dismiss, { once: true });
   }
 
+  // 右下 ⓘ から開閉する info ボード（welcome と同じ kv-overlay スタイルを共有。再表示可能）
+  const info = document.getElementById("info")!;
+  const closeInfo = () => {
+    info.classList.add("hidden");
+    info.addEventListener("transitionend", () => {
+      if (info.classList.contains("hidden")) info.style.display = "none";
+    }, { once: true });
+  };
+  document.getElementById("info-btn")!.addEventListener("click", () => {
+    info.classList.remove("hidden");
+    info.style.display = "flex";
+  });
+  document.getElementById("info-close")!.addEventListener("click", closeInfo);
+  info.addEventListener("click", (e) => { if (e.target === info) closeInfo(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && info.style.display === "flex") closeInfo();
+  });
+
   startIntroZoom();
 
   function nodeWorldPos(n: { x: number; y: number; z?: number }): THREE.Vector3 {

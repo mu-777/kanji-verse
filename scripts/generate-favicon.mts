@@ -52,10 +52,10 @@ interface Placement {
   alpha: number;
 }
 const PLACEMENTS: Placement[] = [
-  { ch: "漢", cx: 158, cy: 166, size: 304, rot: 0, color: WHITE, alpha: 0.95 }, // 大・左上（はみ出し）
-  { ch: "字", cx: 354, cy: 184, size: 232, rot: 0, color: WHITE, alpha: 1.0 }, //  小・右上
-  { ch: "宇", cx: 170, cy: 352, size: 220, rot: 0, color: WHITE, alpha: 0.82 }, // 小・左下
-  { ch: "宙", cx: 348, cy: 346, size: 296, rot: 0, color: WHITE, alpha: 0.96 }, // 大・右下（はみ出し）
+  { ch: "漢", cx: 148, cy: 166, size: 314, rot: 0, color: WHITE, alpha: 0.95 }, // 大・左上（はみ出し）
+  { ch: "字", cx: 364, cy: 194, size: 232, rot: 0, color: WHITE, alpha: 1.0 }, //  小・右上
+  { ch: "宇", cx: 188, cy: 364, size: 220, rot: 0, color: WHITE, alpha: 0.82 }, // 小・左下（上段とズラす）
+  { ch: "宙", cx: 394, cy: 356, size: 296, rot: 0, color: WHITE, alpha: 0.96 }, // 大・右下（はみ出し・上段とズラす）
 ];
 
 // グリフのパス（中心原点に正規化）と SVG path data を取得
