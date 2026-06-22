@@ -12,11 +12,7 @@
 
 **Kanji-Verse is a night sky made of kanji.** Around 2,800 of the Japanese characters used in people's names drift through 3D space — and the closer two of them are, the closer their meanings. Float among the stars and discover which kanji turn out to be "neighbors".
 
-<p align="center">
-  <video src="https://github.com/mu-777/kanji-verse/raw/master/kanji-verse_720p.mp4" controls muted loop width="680">
-    <a href="https://github.com/mu-777/kanji-verse/raw/master/kanji-verse_720p.mp4">▶ Watch the demo</a>
-  </video>
-</p>
+<p align="center"><a href="https://github.com/mu-777/kanji-verse/raw/master/kanji-verse_720p.mp4">▶ Watch the demo video (MP4)</a></p>
 
 <p align="center"><sub>A quick tour — drift through the galaxy, search by meaning, and dive into a kanji.</sub></p>
 
