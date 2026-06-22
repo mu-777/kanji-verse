@@ -51,3 +51,13 @@
 - **背景**: index.html（`/mnt/c` 配下）への編集で、Edit ツールが `ENOENT: ... statx '.../index.html'` を返した。だが直後に Read すると変更は実際に適用されていた。エディタ/フォーマッタがファイルを書き換える瞬間と編集が競合し、書き込み後の stat が一時的に失敗するのが原因と推定（9P＋外部エディタ保存）。
 - **一般化**: WSL2 で Windows ドライブ（`/mnt/c`）上のファイルを編集中にツールがエラー（特に ENOENT/statx）を返したら、**即リトライせず、まず Read で適用状態を確認する**。すでに適用済みなら同じ編集を再実行すると二重適用・文字列不一致になる。
 - **適用範囲**: `/mnt/c` 配下のファイル編集全般（IDE で同ファイルを開いている／保存フォーマッタが走る環境）。
+
+## 2026-06-23: GitHub README に動画を埋め込むには user-attachments URL（≤10MB）が要る
+- **背景**: プロモ動画 mp4 を README で再生したい。`<video src="<raw/LFS URL>">` を試したが、GitHub の描画で `<video>` タグごとサニタイズ除去され空の `<p>` になった（描画後HTMLで確認して発覚）。
+- **一般化**:
+  1. GitHub の Markdown/README は、**自ドメインにアップロードされた動画（`https://github.com/user-attachments/assets/<uuid>`）の `<video>` だけをプレーヤー描画**する。raw / LFS / 任意ホストを指す `<video>` は除去される。
+  2. その URL は **web UI でしか取得できない**: リポジトリの Issue/PR コメント欄に動画をドラッグ&ドロップ → 挿入される `user-attachments/assets/...` をコピー（Issue は投稿不要）。`<p align="center"><video src="そのURL" controls></video></p>` で中央寄せ可（GitHub は独自に `details>video` へ変換して描画）。
+  3. **添付サイズ上限**: 無料枠の動画は約 10MB。超過で拒否。ffmpeg 二段階で目標サイズに収める（`-preset slow -b:v <bitrate> -pass 1/2`）。総bitrate(kbps) ≒ 目標bit数 ÷ 尺(秒)。画質維持はビットレートに加え preset(slow) が効く。
+  4. Git LFS の mp4 の raw URL は `media.githubusercontent.com` が `application/octet-stream` で返すため、開くとダウンロードになりインライン再生しない。**LFS=原本をリポジトリに残す用途、表示=user-attachments**、と役割分担する。
+  5. 検証は描画後HTMLで: `curl -H "Accept: application/vnd.github.html" https://api.github.com/repos/<owner>/<repo>/readme` に `<video>` が残るか確認する（タグが消えていれば未対応URL）。
+- **適用範囲**: GitHub の README/Issue/PR に動画・デモを載せる全般。

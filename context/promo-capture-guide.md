@@ -187,3 +187,15 @@ ffmpeg -i x15.mp4 -i palette.png -lavfi "fps=18,scale=720:-1:flags=lanczos,palet
 - [ ] 1サイクル＋αを録画 → mkv→mp4 リマックス
 - [ ] ffmpeg で切り出し・BGM(-14LUFS)・テロップ・`+faststart`
 - [ ] 各プラットフォーム仕様で書き出し、実機（スマホ）で見え方確認
+
+---
+
+## 8. README に動画プレーヤーを埋め込む（GitHub）
+GitHub は `<video>` を **自ドメインにアップした動画 URL のときだけ**プレーヤー描画する。raw / LFS / 任意ホストを指す `<video>` はサニタイズで除去される（→ 詳細は learnings.md 2026-06-23）。
+
+手順:
+1. mp4 を **10MB 以下**にする（無料枠の添付上限）。`ffmpeg -y -i in.mp4 -c:v libx264 -preset slow -b:v <bitrate> -pass 1 -an -f mp4 /dev/null && ffmpeg -i in.mp4 -c:v libx264 -preset slow -b:v <bitrate> -pass 2 -c:a aac -b:a 96k -pix_fmt yuv420p -movflags +faststart out.mp4`（目標bit数 ÷ 尺 で bitrate を逆算）。
+2. リポジトリの **Issue/PR コメント欄に out.mp4 をドラッグ&ドロップ**（投稿不要）→ 挿入される `https://github.com/user-attachments/assets/<uuid>` をコピー。
+3. README に `<p align="center"><video src="<そのURL>" controls muted></video></p>` を置く。
+4. 検証: `curl -H "Accept: application/vnd.github.html" https://api.github.com/repos/<owner>/<repo>/readme` の出力に `<video` が残っていれば描画される。
+- 原本（フル画質）をリポジトリに残したい場合は Git LFS でコミット（`git lfs track "*.mp4"`）。ただし LFS の raw URL は `octet-stream` 配信でインライン再生不可なので、**表示は user-attachments・保存は LFS** と役割を分ける。
