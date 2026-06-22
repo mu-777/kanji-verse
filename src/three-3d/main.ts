@@ -8,8 +8,13 @@ import { createInteraction }    from "../three-core/interaction";
 import { createProximityLabel } from "../three-core/proximity-label";
 import { loadKanji }            from "../shared/loader";
 import { setupUI }              from "../shared/ui";
+import { startCinematic }       from "./cinematic";
 
 async function main() {
+  // 動画キャプチャ用シネマティックモード（?demo=1, 任意で &loop=1）。通常起動には影響しない。
+  const params = new URLSearchParams(window.location.search);
+  const demo = params.get("demo") === "1";
+  const loop = params.get("loop") === "1";
   const loading      = document.getElementById("loading")!;
   const loadPercent  = document.getElementById("loading-percent")!;
   const loadText     = document.getElementById("loading-text")!;
@@ -50,7 +55,7 @@ async function main() {
   totalWork = nodes.length * 2;
 
   const { scene, renderer }      = createScene(canvas);
-  const { camera, update: updateCamera, startIntroZoom, flyTo } = createCamera(renderer);
+  const { camera, controls, update: updateCamera, startIntroZoom, flyTo } = createCamera(renderer);
   const kanjiPoints              = createKanjiPoints(nodes);
   const { composer }             = createComposer(renderer, scene, camera);
   scene.add(kanjiPoints.points);
@@ -80,8 +85,8 @@ async function main() {
 
   loading.style.display = "none";
 
-  // B: 初回訪問時にウェルカムオーバーレイを表示
-  if (!localStorage.getItem("kv_welcomed")) {
+  // B: 初回訪問時にウェルカムオーバーレイを表示（demo モードでは出さない）
+  if (!demo && !localStorage.getItem("kv_welcomed")) {
     const welcome = document.getElementById("welcome")!;
     welcome.style.display = "flex";
     const dismiss = () => {
@@ -113,7 +118,7 @@ async function main() {
     if (e.key === "Escape" && info.style.display === "flex") closeInfo();
   });
 
-  startIntroZoom();
+  if (!demo) startIntroZoom();
 
   function nodeWorldPos(n: { x: number; y: number; z?: number }): THREE.Vector3 {
     return new THREE.Vector3(
@@ -155,6 +160,21 @@ async function main() {
     }
   }
 
+  // 動画キャプチャ用シネマティックモード: カメラを奪い、演出タイムラインを再生する。
+  // setupUI 後に起動する（検索入力の input ハンドラが必要なため）。
+  const cinematic = demo
+    ? startCinematic(
+        {
+          camera,
+          controls,
+          nodes,
+          interaction,
+          searchInput: document.getElementById("search-input") as HTMLInputElement,
+        },
+        { loop },
+      )
+    : null;
+
   // レンダーループ
   let prev = performance.now();
   function animate() {
@@ -162,7 +182,8 @@ async function main() {
     const now = performance.now();
     const dt  = (now - prev) / 1000;
     prev = now;
-    updateCamera(dt);
+    if (cinematic) cinematic.update(dt);
+    else updateCamera(dt);
     proximityLabel.update(dt);
     composer.render();
     proximityLabel.render(renderer);

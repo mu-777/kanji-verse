@@ -2,25 +2,30 @@
 
 *English · [日本語](README.ja.md)*
 
-A starfield-like 3D visualization of the kanji usable in Japanese names (2,136 Jōyō + 649 Jinmei = 2,785 characters), arranged so that characters with similar meanings sit close together.
+<p align="center">
+  <a href="https://mu-777.github.io/kanji-verse/">
+    <img src="public/ogp.png" alt="Kanji-Verse — a night sky made of kanji" width="680">
+  </a>
+</p>
 
-https://mu-777.github.io/kanji-verse/
+<p align="center"><b><a href="https://mu-777.github.io/kanji-verse/">✨ Open Kanji-Verse →</a></b></p>
 
-Kanji with related meanings cluster together in space (e.g. 木 "tree", 森 "forest", and 林 "woods" end up near each other).
+**Kanji-Verse is a night sky made of kanji.** Around 2,800 of the Japanese characters used in people's names drift through 3D space — and the closer two of them are, the closer their meanings. Float among the stars and discover which kanji turn out to be "neighbors".
 
-## Features
+### What you can do
 
-- ~2,800 kanji placed in 3D space by semantic similarity (AI embeddings + UMAP 3D)
-- Drag to rotate, scroll to zoom, and freely explore (an intro zoom plays on load)
-- Click a star (kanji) to see its on'yomi / kun'yomi readings (with romaji) and meanings
-- One search box, two modes:
-  - Type a kanji → the camera flies to that character (e.g. `愛`)
-  - Type English → kanji whose meanings match light up (e.g. `love`)
-- Toggle filters for Jōyō and Jinmei kanji
-- URL sharing: opening `?k=愛` jumps straight to and selects that kanji
-- A welcome overlay on first visit, plus an ⓘ button (bottom-right) that reopens an About / controls / analytics-disclosure board
+- 🌌 **Wander the galaxy** — drag to look around and scroll to zoom through thousands of glowing characters
+- ✨ **Discover unexpected neighbors** — kanji with related meanings cluster together (木 *tree* · 森 *forest* · 林 *woods* all sit side by side)
+- 🔍 **Jump to a kanji** — type a character like 愛 and the camera flies straight to it
+- 💬 **Search by meaning** — type an English word like *love* and every matching kanji lights up
+- ⭐ **Tap a star for details** — see a kanji's readings (on'yomi / kun'yomi) and meanings
+- 🎚️ **Filter by type** — show only name-use (Jinmei) or everyday (Jōyō) kanji
+
+Runs right in your browser — no install, no sign-up. Every kanji even has its own shareable link (`?k=愛`).
 
 ---
+
+<sub>📦 The rest of this README is for developers who want to run or rebuild the project.</sub>
 
 ## Tech stack
 
@@ -146,3 +151,12 @@ rendered with Three.js + UnrealBloom
 Each entry has `k` (kanji), `m` (meanings), `on`/`kun` (readings), `x`/`y`/`z` (3D coordinates),
 `t` (0 = Jōyō / 1 = Jinmei), and `c` (cluster ID — generated but not currently used for rendering).
 The closer two kanji are in meaning, the closer they sit in space.
+
+## License
+
+This project is split into two licenses:
+
+- **Application code** — [Apache License 2.0](LICENSE).
+- **Generated data** (`public/data/`) — [CC BY-SA 4.0](public/data/LICENSE). The kanji meanings and on/kun readings are derived from the [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) dictionary file, the property of the [Electronic Dictionary Research and Development Group (EDRDG)](https://www.edrdg.org/edrdg/licence.html), used in conformance with the Group's licence. Any redistribution of the data must keep this attribution and stay under CC BY-SA 4.0.
+
+The embedding model [all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2) (Apache-2.0) is used only at build time to generate the data and is not redistributed.

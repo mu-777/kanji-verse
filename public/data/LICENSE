@@ -1,0 +1,28 @@
+Data license — public/data/
+============================
+
+The generated data in this directory (kanji-3d.json and any other files
+here) is a derivative work of the KANJIDIC2 dictionary file: the kanji
+meanings (`m`) and on/kun readings (`on`/`kun`) are extracted directly from
+KANJIDIC2, and the 3D coordinates (`x`/`y`/`z`), type (`t`) and cluster id
+(`c`) are computed from those meanings.
+
+KANJIDIC2 is the property of the Electronic Dictionary Research and
+Development Group (EDRDG), and is used in conformance with the Group's
+licence. Accordingly, the data in this directory is licensed under the
+same licence:
+
+    Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+    https://creativecommons.org/licenses/by-sa/4.0/
+
+This means any redistribution or adaptation of this data must:
+  - give attribution to the EDRDG / KANJIDIC project, and
+  - be distributed under CC BY-SA 4.0 (or a compatible licence).
+
+Source / attribution:
+  - KANJIDIC project: https://www.edrdg.org/wiki/index.php/KANJIDIC_Project
+  - EDRDG licence:    https://www.edrdg.org/edrdg/licence.html
+
+Note: this CC BY-SA 4.0 licence applies ONLY to the contents of
+public/data/. The application source code is licensed separately under the
+Apache License 2.0 (see /LICENSE).
