@@ -85,8 +85,8 @@ async function main() {
 
   loading.style.display = "none";
 
-  // B: 初回訪問時にウェルカムオーバーレイを表示（demo モードでは出さない）
-  if (!demo && !localStorage.getItem("kv_welcomed")) {
+  // B: 起動のたびにウェルカムオーバーレイを表示（demo モードでは出さない）
+  if (!demo) {
     const welcome = document.getElementById("welcome")!;
     welcome.style.display = "flex";
     const dismiss = () => {
@@ -94,7 +94,6 @@ async function main() {
       welcome.addEventListener("transitionend", () => {
         welcome.style.display = "none";
       }, { once: true });
-      localStorage.setItem("kv_welcomed", "1");
     };
     document.getElementById("welcome-btn")!.addEventListener("click", dismiss);
     document.addEventListener("keydown", dismiss, { once: true });
