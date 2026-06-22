@@ -12,7 +12,9 @@
 
 **Kanji-Verse は、漢字でできた夜空です。** 人名に使える約2,800字の漢字が3D空間を漂い、意味が近い漢字どうしほど近くに集まっています。星の海をたゆたいながら、「この漢字とこの漢字は意味がご近所なんだ」という発見を楽しめます。
 
-<p align="center"><a href="https://github.com/mu-777/kanji-verse/raw/master/kanji-verse_720p.mp4">▶ デモ動画を見る（MP4）</a></p>
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/2a04980d-3d8f-4cdf-a8ea-2311635872c0" controls muted loop width="680"></video>
+</p>
 
 <p align="center"><sub>ざっと一巡り — 銀河を漂い、意味で検索し、漢字へダイブ。</sub></p>
 
