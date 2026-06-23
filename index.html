@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,8 +15,10 @@
       gtag('config', 'G-E6F07KS3MG');
     </script>
 
-    <title>Kanji-Verse</title>
+    <title>Kanji-Verse — explore ~2,800 Japanese kanji arranged by meaning in 3D</title>
     <meta name="description" content="Thousands of Japanese kanji floating in space — similar meanings, closer together. Drift among them and see what you discover." />
+    <link rel="canonical" href="https://mu-777.github.io/kanji-verse/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
 
     <!-- Favicon: 漢字宇宙（Kanji-Verse の語源）を発光する星のクラスタとして描いたタイル -->
     <link rel="icon" href="favicon.ico" sizes="32x32" />
@@ -32,7 +34,7 @@
     <meta property="og:url" content="https://mu-777.github.io/kanji-verse/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Kanji-Verse" />
-    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -235,9 +237,38 @@
       .kv-fine a { color: rgba(190, 200, 255, 0.6); text-decoration: none; border-bottom: 1px solid rgba(160, 180, 255, 0.25); }
       .kv-fine a:hover { color: #e0e4ff; border-bottom-color: rgba(160, 180, 255, 0.6); }
 
+      /* スクリーンリーダー/クローラ向けの見出し（視覚的には隠す）。世界観を崩さず意味的な h1 を提供する */
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      }
     </style>
+
+    <!-- 構造化データ: アプリの内容を検索エンジンに明示（WebApplication） -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Kanji-Verse",
+        "url": "https://mu-777.github.io/kanji-verse/",
+        "description": "An interactive 3D visualization of ~2,800 Japanese kanji (the 2,136 Jōyō and 649 Jinmeiyō characters), arranged by meaning with AI embeddings so that characters with similar meanings cluster together in space.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web browser",
+        "browserRequirements": "Requires JavaScript and WebGL",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "author": { "@type": "Person", "name": "mu-777", "url": "https://github.com/mu-777" }
+      }
+    </script>
   </head>
   <body>
+    <h1 class="sr-only">Kanji-Verse — an interactive 3D map of ~2,800 Japanese kanji (Jōyō &amp; Jinmeiyō) arranged by meaning</h1>
+    <noscript>
+      <div style="max-width: 640px; margin: 12vh auto 0; padding: 0 24px; text-align: center; color: #cdd6ff; font-family: sans-serif; line-height: 1.8;">
+        <p style="font-size: 18px;">Kanji-Verse is an interactive 3D visualization of about 2,800 Japanese kanji — the 2,136 Jōyō and 649 Jinmeiyō characters — arranged by meaning using AI embeddings, so characters with similar meanings cluster together in space.</p>
+        <p style="font-size: 14px; opacity: 0.7;">This app requires JavaScript and WebGL. Source and details on <a href="https://github.com/mu-777/kanji-verse" style="color:#9db0ff;">GitHub</a>.</p>
+      </div>
+    </noscript>
     <div id="loading">
       <div id="loading-text">
         <span>Loading Kanji-Verse...</span>

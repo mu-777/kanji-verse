@@ -52,6 +52,18 @@
 - **一般化**: WSL2 で Windows ドライブ（`/mnt/c`）上のファイルを編集中にツールがエラー（特に ENOENT/statx）を返したら、**即リトライせず、まず Read で適用状態を確認する**。すでに適用済みなら同じ編集を再実行すると二重適用・文字列不一致になる。
 - **適用範囲**: `/mnt/c` 配下のファイル編集全般（IDE で同ファイルを開いている／保存フォーマッタが走る環境）。
 
+## 2026-06-24: GitHub Pages プロジェクトページの SEO は「効く場所」を見極める
+- **背景**: github.io のプロジェクトページ（サブパス `…/kanji-verse/`）を Google にインデックスさせる対応。robots.txt / jekyll-sitemap を素朴に置こうとしたが、どちらもこの構成では効かないと判明。
+- **学び（一般化）**:
+  1. **robots.txt はオリジン（ホスト）ルートにしか効かない**。`user.github.io/project/robots.txt` はクローラに読まれない。プロジェクトページのサブパスでクロール制御したいなら robots.txt ではなく**ページ単位の `<meta name="robots">`**（HTMLの`<head>`、ページごとに確実に効く）を使う。`user.github.io/robots.txt` を持てるのはルートのユーザーページrepo（`user.github.io`）だけ。
+  2. **GitHub Actions デプロイ（`upload-pages-artifact`+`deploy-pages`）では Jekyll は走らない**。`_config.yml` の `jekyll-sitemap` 等のプラグインは無効（成果物にコピーされるだけのデッドコード）。sitemap が要るなら**静的な `sitemap.xml` を自前で置く**。「設定があるから動いている」と思い込まない。
+  3. **sitemap はホストルートでなくてよい**が、その sitemap が載せられる URL は**自分のディレクトリ以下に限る**（scope ルール）。`…/kanji-verse/sitemap.xml` に `…/kanji-verse/` を載せるのは OK。発見は GSC での明示送信が確実。
+  4. **未インデックスかどうかは `site:` 検索で一次確認**してから対策する（ランク低か未発見かで打ち手が違う）。新規個人サイトの最大のボトルネックは「発見」＝ **GSC 登録 + URL検査でインデックス登録リクエスト**が最速。
+  5. **SPA/WebGL はクロール材料が薄い**。世界観を壊さない範囲で、意味的な `<h1>`(sr-only)・`<noscript>`・JSON-LD を足し、`lang`/`og:locale` を実表示言語に整合させる。
+  6. **ブランド名は既存サービスとの衝突を `site:`/通常検索で事前確認**する（"Kanjiverse" は `kanjiverse.com` が既存）。衝突する指名検索は捨て、独自キーワードと被リンクで攻める前提を立てる。
+- **補足（環境）**: WSL2 `/mnt/c` ではローカル `npm run build` が `vite-plugin-compression` の段階で ENOMEM(exit 1) になることがある。コアビルドは成功済みで CI(ubuntu) では再現しない。かつ GitHub Pages は配信時に独自gzipするため事前圧縮 `.gz/.br` は実配信に使われない（このプラグインはこのデプロイ先では実益が薄い）。
+- **適用範囲**: GitHub Pages（特にプロジェクトページ/サブパス）+ SPA の SEO 全般。
+
 ## 2026-06-23: GitHub README に動画を埋め込むには user-attachments URL（≤10MB）が要る
 - **背景**: プロモ動画 mp4 を README で再生したい。`<video src="<raw/LFS URL>">` を試したが、GitHub の描画で `<video>` タグごとサニタイズ除去され空の `<p>` になった（描画後HTMLで確認して発覚）。
 - **一般化**:
