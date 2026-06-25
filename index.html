@@ -151,6 +151,7 @@
         animation: kv-spin 0.9s linear infinite;
       }
       @keyframes kv-spin { to { transform: rotate(360deg); } }
+      #share-progress { margin-top: 14px; font-size: 13px; letter-spacing: 0.1em; color: rgba(190, 200, 255, 0.7); font-variant-numeric: tabular-nums; }
 
       /* ローディングも OGP の世界観に合わせて Inter ExtraLight・大文字・ワイドトラッキング・グロー */
       #loading {
@@ -429,6 +430,7 @@
           <div class="kv-title"><span>Filming</span></div>
           <p class="kv-desc">Creating your kanji clip…<br>This takes a few seconds.</p>
           <div class="share-spinner"></div>
+          <div id="share-progress">0%</div>
         </div>
         <div id="share-ready" style="display:none">
           <div class="kv-title"><span>Ready</span></div>

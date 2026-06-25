@@ -46,11 +46,6 @@ export interface AudioController {
   /** レンダーループから毎フレーム呼ぶ。speed はカメラ運動の速さ（rad/s 相当）。 */
   update(dt: number, speed?: number): void;
   onChange(cb: (enabled: boolean) => void): void;
-  // ── 動画キャプチャ用 ──
-  /** BGM を一時有効化＆ロード完了を待ち、master を分岐した音声トラックを返す（pref は汚さない）。 */
-  beginCapture(): Promise<MediaStreamTrack | null>;
-  /** 録画終了。分岐を外し録画前の mute 状態へ戻す。 */
-  endCapture(): void;
 }
 
 function makeNoiseBuffer(ctx: AudioContext, seconds: number): AudioBuffer {
@@ -99,10 +94,6 @@ export function createAudio(): AudioController {
   let motion = 0;      // カメラ運動の連続値 0..1
   let energy = 0;      // ベッド駆動用の最終 energy 0..1
   let lastDegree = -1; // 直近クリック音のスケール度数（連続で同じ音にしない旋律ウォーク用）
-
-  // 動画キャプチャ用
-  let captureDest: MediaStreamAudioDestinationNode | null = null;
-  let captureRestore = false;
 
   const changeCbs: ((enabled: boolean) => void)[] = [];
 
@@ -330,24 +321,5 @@ export function createAudio(): AudioController {
       }
     },
     onChange(cb) { changeCbs.push(cb); },
-    async beginCapture() {
-      ensureContext();
-      if (!ctx || !master) return null;
-      captureRestore = enabled;
-      setEnabled(true, { persist: false }); // 一時有効化（pref は汚さない）。bed の音を録画に載せる
-      try { await loadBuffer(); } catch { /* ignore */ }
-      startBed();
-      try { await ctx.resume(); } catch { /* ignore */ }
-      captureDest = ctx.createMediaStreamDestination();
-      master.connect(captureDest); // ctx.destination と並行して録画ストリームへ分岐
-      return captureDest.stream.getAudioTracks()[0] ?? null;
-    },
-    endCapture() {
-      if (master && captureDest) {
-        try { master.disconnect(captureDest); } catch { /* ignore */ }
-      }
-      captureDest = null;
-      setEnabled(captureRestore, { persist: false });
-    },
   };
 }

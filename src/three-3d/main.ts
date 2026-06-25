@@ -10,8 +10,8 @@ import { loadKanji }            from "../shared/loader";
 import { setupUI }              from "../shared/ui";
 import { createAudio }          from "../three-core/audio";
 import { startCinematic }       from "./cinematic";
-import { startShareClip, type ShareClipHandle } from "./share-clip";
-import { createClipRecorder, type ClipRecorder } from "../three-core/recorder";
+import { startShareClip }       from "./share-clip";
+import { encodeClip, clipEncodingSupported } from "../three-core/recorder";
 import type { KanjiNode }       from "../shared/types";
 
 async function main() {
@@ -200,34 +200,30 @@ async function main() {
   }
 
   // ── ソーシャル動画シェア ──
-  // 2タップ方式: ①詳細パネルの Share → クリップ生成（約7秒録画）→ ②プレビューの Share ボタン
-  // （新しいタップ）で navigator.share。録画はディレクターがカメラを駆動し、レンダーループ末尾で
-  // 2D 合成キャンバスへ取り込む（recorder.ts）。navigator.share はモバイルで動画ファイルを共有
-  // シートに直接渡す（ダウンロード不要）。
+  // 2タップ方式: ①詳細パネルの Share → クリップ生成（WebCodecs オフライン, 約10秒）→ ②プレビューの
+  // Share ボタン（新しいタップ）で navigator.share（モバイルは動画ファイルを共有シートへ直接＝DL不要）。
+  // 生成中は通常レンダーループを止め、エンコーダが各フレームの時刻でレンダラを駆動する（recorder.ts）。
   const shareModal    = document.getElementById("share-modal");
   const shareGenEl    = document.getElementById("share-generating");
   const shareReadyEl  = document.getElementById("share-ready");
+  const shareProgress = document.getElementById("share-progress");
   const shareVideo    = document.getElementById("share-video") as HTMLVideoElement | null;
   const shareDoBtn    = document.getElementById("share-do") as HTMLButtonElement | null;
   const shareDownload = document.getElementById("share-download") as HTMLButtonElement | null;
   const shareCloseBtn = document.getElementById("share-close");
 
-  const shareSupported = typeof MediaRecorder !== "undefined"
-    && typeof HTMLCanvasElement !== "undefined"
-    && "captureStream" in HTMLCanvasElement.prototype;
+  const shareSupported = clipEncodingSupported();
 
   // demo（プロモ）や非対応環境では Share ボタンを隠す
   const detailShareBtn = document.getElementById("detail-share");
   if (detailShareBtn && (demo || !shareSupported)) detailShareBtn.style.display = "none";
 
-  let director: ShareClipHandle | null = null;
-  let capturing: ClipRecorder | null = null;
-  let shareNode: KanjiNode | null = null;
+  let generating = false;            // 生成中は通常レンダーループを止める
   let shareObjectUrl: string | null = null;
-  let finalizing = false;
 
   function openShareGenerating() {
     if (!shareModal || !shareGenEl || !shareReadyEl) return;
+    if (shareProgress) shareProgress.textContent = "0%";
     shareGenEl.style.display = "block";
     shareReadyEl.style.display = "none";
     shareModal.style.display = "flex";
@@ -246,31 +242,45 @@ async function main() {
   }
 
   async function runShare(node: KanjiNode) {
-    if (!shareSupported || director || capturing) return;
-    shareNode = node;
+    if (!shareSupported || generating) return;
+    generating = true; // 通常レンダーループを止め、エンコーダが各フレームを駆動する
     openShareGenerating();
-    const audioTrack = await audio.beginCapture();
-    // ディレクター開始と録画開始の間に await を挟まない＝両者の時計を揃える
-    director = startShareClip(
-      { camera, controls, onDive: () => audio.bump() },
-      nodeWorldPos(node),
-    );
-    const rec = createClipRecorder({
-      audioTrack,
-      url: `mu-777.github.io/kanji-verse/?k=${node.k}`,
-    });
-    capturing = rec;
-    rec.start();
+    const clip = startShareClip({ camera, controls }, nodeWorldPos(node));
+    try {
+      const blob = await encodeClip({
+        width: 1080, height: 1080, fps: 30,
+        duration: clip.duration,
+        watermarkUrl: `mu-777.github.io/kanji-verse/?k=${node.k}`,
+        audioUrl: `${import.meta.env.BASE_URL}audio/share-clip.mp3`,
+        renderFrame: (t) => {
+          clip.apply(t);
+          proximityLabel.update(0); // 原点距離でラベル表示を更新（dt 非依存）
+          composer.render();
+          proximityLabel.render(renderer);
+          return canvas;
+        },
+        fadeAt: (t) => clip.fadeAt(t),
+        onProgress: (p) => { if (shareProgress) shareProgress.textContent = `${Math.round(p * 100)}%`; },
+      });
+      clip.dispose();
+      generating = false;
+      showSharePreview(blob, node);
+    } catch (e) {
+      console.error("clip encode failed", e);
+      clip.dispose();
+      generating = false;
+      closeShareModal();
+    }
   }
 
-  function showSharePreview(blob: Blob, ext: string, mimeType: string, node: KanjiNode) {
+  function showSharePreview(blob: Blob, node: KanjiNode) {
     if (!shareGenEl || !shareReadyEl) return;
     shareObjectUrl = URL.createObjectURL(blob);
     if (shareVideo) { shareVideo.src = shareObjectUrl; shareVideo.play().catch(() => { /* ignore */ }); }
     shareGenEl.style.display = "none";
     shareReadyEl.style.display = "block";
 
-    const file = new File([blob], `kanji-verse-${node.k}.${ext}`, { type: mimeType || "video/webm" });
+    const file = new File([blob], `kanji-verse-${node.k}.mp4`, { type: "video/mp4" });
     const pageUrl = `https://mu-777.github.io/kanji-verse/?k=${encodeURIComponent(node.k)}`;
     const text = `${node.k} — Kanji-Verse ✨`;
     const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [file] }));
@@ -300,21 +310,6 @@ async function main() {
     if (shareDownload) shareDownload.onclick = downloadFile;
   }
 
-  async function finalizeShare() {
-    if (finalizing || !capturing) return;
-    finalizing = true;
-    const rec = capturing;
-    capturing = null; // これ以降はフレームを取り込まない
-    let blob: Blob | null = null;
-    try { blob = await rec.stop(); } catch { /* ignore */ }
-    audio.endCapture();
-    director?.dispose(); // カメラ/コントロールを録画前へ復帰
-    director = null;
-    finalizing = false;
-    if (blob && shareNode) showSharePreview(blob, rec.ext, rec.mimeType, shareNode);
-    else closeShareModal();
-  }
-
   shareCloseBtn?.addEventListener("click", closeShareModal);
 
   // 動画キャプチャ用シネマティックモード: カメラを奪い、演出タイムラインを再生する。
@@ -340,18 +335,16 @@ async function main() {
   function animate() {
     requestAnimationFrame(animate);
     const now = performance.now();
-    const dt  = (now - prev) / 1000;
+    // 生成（オフライン録画）で時間が飛んでも復帰時に dt が暴れないよう上限を設ける
+    const dt  = Math.min((now - prev) / 1000, 0.1);
     prev = now;
+    if (generating) return; // 生成中はエンコーダがレンダラを占有（フレームごとに描画）
     if (cinematic) cinematic.update(dt);
-    else if (director) director.update(dt);
     else updateCamera(dt);
-    audio.update(dt, director ? 0 : getSpeed());
+    audio.update(dt, getSpeed());
     proximityLabel.update(dt);
     composer.render();
     proximityLabel.render(renderer);
-    // 録画中は同フレーム内で 2D 合成キャンバスへ取り込む（preserveDrawingBuffer 不要）
-    if (capturing) capturing.drawFrame(canvas);
-    if (director && director.done && capturing) finalizeShare();
   }
   animate();
 }
