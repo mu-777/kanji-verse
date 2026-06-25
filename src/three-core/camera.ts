@@ -9,6 +9,8 @@ export interface CameraBundle {
   /** 指定ワールド座標のノードをセンターにしてカメラを飛ばす。 */
   flyTo(target: THREE.Vector3): void;
   update(dt: number): void;
+  /** 現在のカメラ運動の速さ（rad/s 相当）。BGM のモーション連動に使う。 */
+  getSpeed(): number;
 }
 
 const INERTIA_ROT_HALF_LIFE  = 4.0;  // 回転慣性の半減期（秒）
@@ -221,5 +223,10 @@ export function createCamera(
     // "user" は OrbitControls に委ねる
   }
 
-  return { camera, controls, startIntroZoom, flyTo, update };
+  // 回転（rad/s）とズーム（units/s）を合成した運動の速さ。ドラッグ・慣性・ダイブに連動。
+  function getSpeed(): number {
+    return Math.hypot(thetaVelSmooth, phiVelSmooth) + Math.abs(radiusVelSmooth) * 1.5;
+  }
+
+  return { camera, controls, startIntroZoom, flyTo, update, getSpeed };
 }

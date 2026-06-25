@@ -7,6 +7,8 @@ export interface UIRenderer {
   clearSearch(): void;
   setFilter(filter: FilterState): void;
   onSelect: (node: KanjiNode | null) => void;
+  /** 詳細パネルの Share ボタン。動画クリップ生成→共有を起動する（任意）。 */
+  onShare?: (node: KanjiNode) => void;
 }
 
 export function setupUI(renderer: UIRenderer): void {
@@ -18,8 +20,12 @@ export function setupUI(renderer: UIRenderer): void {
   const panelKun = document.getElementById("detail-kun")!;
   const panelMeanings = document.getElementById("detail-meanings")!;
   const panelClose = document.getElementById("detail-close")!;
+  const panelShare = document.getElementById("detail-share");
+
+  let currentNode: KanjiNode | null = null;
 
   renderer.onSelect = (node: KanjiNode | null) => {
+    currentNode = node;
     if (!node) {
       panel.classList.remove("visible");
       history.replaceState({}, "", window.location.pathname);
@@ -42,6 +48,10 @@ export function setupUI(renderer: UIRenderer): void {
   panelClose.addEventListener("click", () => {
     panel.classList.remove("visible");
     renderer.onSelect(null);
+  });
+
+  panelShare?.addEventListener("click", () => {
+    if (currentNode) renderer.onShare?.(currentNode);
   });
 
   // ── 検索 ──

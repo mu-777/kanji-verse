@@ -117,6 +117,40 @@
       .reading-value { color: rgba(220, 225, 255, 0.9); }
       #detail-meanings { font-size: 13px; color: rgba(200, 210, 255, 0.85); text-align: center; line-height: 1.8; border-top: 1px solid rgba(120, 140, 255, 0.15); padding-top: 10px; }
       #detail-close { position: absolute; top: 10px; right: 14px; background: none; border: none; color: rgba(180, 190, 255, 0.5); font-size: 18px; cursor: pointer; font-family: inherit; }
+      /* 詳細パネルの共有ボタン（動画クリップを生成して共有） */
+      #detail-share {
+        display: block; margin: 16px auto 0;
+        background: rgba(120, 140, 255, 0.12);
+        border: 1px solid rgba(140, 160, 255, 0.35);
+        border-radius: 20px; padding: 8px 24px;
+        color: #e0e4ff; font-family: inherit; font-size: 12px;
+        letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+        transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+      }
+      #detail-share:hover {
+        background: rgba(120, 140, 255, 0.22);
+        border-color: rgba(160, 180, 255, 0.6);
+        box-shadow: 0 0 20px rgba(120, 140, 255, 0.25);
+      }
+
+      /* 共有モーダル（クリップ生成中 → プレビュー＋共有）。kv-overlay/kv-board を共用 */
+      .kv-share .kv-title { margin-bottom: 18px; }
+      #share-video {
+        width: min(360px, 72vw); aspect-ratio: 1 / 1;
+        display: block; margin: 0 auto 20px;
+        border-radius: 14px; background: #05050f;
+        border: 1px solid rgba(120, 140, 255, 0.25);
+      }
+      #share-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+      #share-download { background: rgba(120, 140, 255, 0.05); }
+      .share-spinner {
+        width: 36px; height: 36px; margin: 10px auto 0;
+        border: 2px solid rgba(140, 160, 255, 0.2);
+        border-top-color: rgba(180, 200, 255, 0.85);
+        border-radius: 50%;
+        animation: kv-spin 0.9s linear infinite;
+      }
+      @keyframes kv-spin { to { transform: rotate(360deg); } }
 
       /* ローディングも OGP の世界観に合わせて Inter ExtraLight・大文字・ワイドトラッキング・グロー */
       #loading {
@@ -168,6 +202,26 @@
         color: #e0e4ff;
         box-shadow: 0 0 20px rgba(120, 140, 255, 0.25);
       }
+
+      /* BGM トグル（info アイコンの左隣）。off のときは音符に取り消し線でミュートを示す */
+      #sound-btn {
+        position: fixed; bottom: 20px; right: 58px; z-index: 10;
+        width: 30px; height: 30px; border-radius: 50%; padding: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(10, 10, 30, 0.85);
+        border: 1px solid rgba(120, 140, 255, 0.3);
+        color: rgba(180, 190, 255, 0.55);
+        backdrop-filter: blur(8px);
+        font-size: 15px; line-height: 1;
+        cursor: pointer;
+        transition: border-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s;
+      }
+      #sound-btn:hover {
+        border-color: rgba(180, 200, 255, 0.7);
+        color: #e0e4ff;
+        box-shadow: 0 0 20px rgba(120, 140, 255, 0.25);
+      }
+      #sound-btn.off { opacity: 0.5; text-decoration: line-through; text-decoration-thickness: 1px; }
 
       #search-count { font-size: 11px; color: rgba(180, 190, 255, 0.45); white-space: nowrap; min-width: 56px; }
 
@@ -232,6 +286,17 @@
         border-color: rgba(160, 180, 255, 0.6);
         box-shadow: 0 0 24px rgba(120, 140, 255, 0.25);
       }
+      /* welcome ボードの BGM 誘導トグル（控えめなテキストボタン） */
+      .kv-sound-toggle {
+        display: block; width: fit-content; margin: 0 auto 26px;
+        background: none; border: none;
+        color: rgba(180, 190, 255, 0.6); font-family: inherit; font-weight: 300;
+        font-size: 12px; letter-spacing: 0.18em; cursor: pointer;
+        padding: 4px 8px;
+        transition: color 0.2s, opacity 0.2s;
+      }
+      .kv-sound-toggle:hover { color: #e0e4ff; }
+      .kv-sound-toggle.off { opacity: 0.7; }
       /* info ボード固有: アクセス解析(GA)の開示。フッター扱いの微細テキスト */
       .kv-fine { font-weight: 300; font-size: 11px; line-height: 1.8; letter-spacing: 0.02em; color: rgba(170, 180, 235, 0.4); margin-top: 30px; }
       .kv-fine a { color: rgba(190, 200, 255, 0.6); text-decoration: none; border-bottom: 1px solid rgba(160, 180, 255, 0.25); }
@@ -310,9 +375,11 @@
         </div>
       </div>
       <div id="detail-meanings"></div>
+      <button id="detail-share" type="button" aria-label="Share this kanji as a video">Share ✨</button>
     </div>
 
 
+    <button id="sound-btn" class="off" type="button" aria-label="Play background music" title="Background music">♪</button>
     <button id="info-btn" type="button" aria-label="About & privacy">i</button>
 
     <!-- B: ウェルカムオーバーレイ（初回のみ。表示制御は main.ts で行う） -->
@@ -324,6 +391,7 @@
           Search by kanji <span class="dim">愛</span> or English <span class="dim">love</span><br>
           Drag to rotate · scroll to zoom · click a star for details
         </p>
+        <button id="welcome-sound" class="kv-sound-toggle off" type="button">♪ Sound off</button>
         <button id="welcome-btn" class="kv-btn">Explore →</button>
       </div>
     </div>
@@ -349,6 +417,28 @@
           <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Opt out</a> ·
           <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">How Google uses data</a>
         </p>
+      </div>
+    </div>
+
+    <!-- 共有モーダル: 詳細パネルの Share から開く。クリップ生成中 → プレビュー＋共有/保存。
+         navigator.share() は「直近のタップ」内でしか呼べないため、生成後に出る Share ボタン
+         （新しいタップ）で共有する2タップ方式。表示制御は main.ts。 -->
+    <div id="share-modal" class="kv-overlay">
+      <div class="kv-board kv-share">
+        <div id="share-generating">
+          <div class="kv-title"><span>Filming</span></div>
+          <p class="kv-desc">Creating your kanji clip…<br>This takes a few seconds.</p>
+          <div class="share-spinner"></div>
+        </div>
+        <div id="share-ready" style="display:none">
+          <div class="kv-title"><span>Ready</span></div>
+          <video id="share-video" playsinline loop muted></video>
+          <div id="share-actions">
+            <button id="share-do" class="kv-btn">Share</button>
+            <button id="share-download" class="kv-btn">Download</button>
+          </div>
+          <button id="share-close" class="kv-sound-toggle" type="button">Close</button>
+        </div>
       </div>
     </div>
 

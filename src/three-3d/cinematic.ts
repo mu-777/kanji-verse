@@ -74,6 +74,7 @@ export function startCinematic(deps: CinematicDeps, opts: CinematicOptions): Cin
   controls.enabled = false;
   interaction.dispose();
   document.getElementById("info-btn")?.style.setProperty("display", "none");
+  document.getElementById("sound-btn")?.style.setProperty("display", "none");
 
   // demo では welcome ボードをオープニングのタイトルカードとして使う。
   // 既存の .kv-overlay フェード（opacity 0.4s）に合わせて出し入れする。localStorage は汚さない。
