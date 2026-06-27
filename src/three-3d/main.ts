@@ -107,6 +107,10 @@ async function main() {
   syncSoundUI(audio.isEnabled());
   soundBtn.addEventListener("click", () => audio.setEnabled(!audio.isEnabled()));
 
+  // k= ディープリンクで来たときに「welcome を閉じてから」対象漢字へ寄せるための遅延フォーカス。
+  // 通常（k= なし）の起動では null のまま使われない。
+  let focusOnWelcomeDismiss: (() => void) | null = null;
+
   // B: 起動のたびにウェルカムオーバーレイを表示（demo モードでは出さない）
   if (!demo) {
     const welcome = document.getElementById("welcome")!;
@@ -119,6 +123,9 @@ async function main() {
       welcome.addEventListener("transitionend", () => {
         welcome.style.display = "none";
       }, { once: true });
+      // k= で来た場合のみ：ボードを閉じたこの瞬間に対象漢字へズーム（裏で勝手に始めない）
+      focusOnWelcomeDismiss?.();
+      focusOnWelcomeDismiss = null;
     };
     document.getElementById("welcome-btn")!.addEventListener("click", dismiss);
     document.getElementById("welcome-sound")!.addEventListener("click", () => audio.setEnabled(!audio.isEnabled()));
@@ -189,13 +196,20 @@ async function main() {
     baseOnSelect(node);
   };
 
-  // C: URLパラメーターで漢字が指定されていれば即座にジャンプ
+  // C: URLパラメーターで漢字が指定されていれば対象へジャンプ。
+  //   ただし welcome を出す通常起動では、ボードの裏でズームが始まると見えないので、
+  //   Explore（welcome の dismiss）でボードを閉じてから寄せる。demo は welcome を出さないので即時。
   const urlKanji = new URLSearchParams(window.location.search).get("k");
   if (urlKanji) {
     const found = interaction.search(urlKanji);
     if (found && interaction.searchNode) {
-      flyTo(nodeWorldPos(interaction.searchNode));
-      interaction.selectNode(interaction.searchNode);
+      const target = interaction.searchNode;
+      const focus = () => {
+        flyTo(nodeWorldPos(target));
+        interaction.selectNode(target);
+      };
+      if (demo) focus();
+      else focusOnWelcomeDismiss = focus;
     }
   }
 
@@ -241,14 +255,32 @@ async function main() {
     }, { once: true });
   }
 
+  // 生成時のレンダリング解像度（正方形）。通常はウィンドウ全体×DPR を描いて中央を切り出すが、
+  // 生成中だけレンダラ/コンポーザ/カメラをこの正方形に縮めると、無駄な画素を描かずに済み大幅に速い。
+  const CLIP_SIZE = 1080;
+  function setCaptureResolution(on: boolean) {
+    if (on) {
+      renderer.setPixelRatio(1);
+      renderer.setSize(CLIP_SIZE, CLIP_SIZE, false); // CSS は触らない（モーダルで隠れている）
+      camera.aspect = 1; camera.updateProjectionMatrix();
+      composer.setSize(CLIP_SIZE, CLIP_SIZE);
+    } else {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+      composer.setSize(window.innerWidth, window.innerHeight);
+    }
+  }
+
   async function runShare(node: KanjiNode) {
     if (!shareSupported || generating) return;
     generating = true; // 通常レンダーループを止め、エンコーダが各フレームを駆動する
     openShareGenerating();
     const clip = startShareClip({ camera, controls }, nodeWorldPos(node));
+    setCaptureResolution(true);
     try {
       const blob = await encodeClip({
-        width: 1080, height: 1080, fps: 30,
+        width: CLIP_SIZE, height: CLIP_SIZE, fps: 30,
         duration: clip.duration,
         watermarkUrl: `mu-777.github.io/kanji-verse/?k=${node.k}`,
         audioUrl: `${import.meta.env.BASE_URL}audio/share-clip.mp3`,
@@ -262,14 +294,14 @@ async function main() {
         fadeAt: (t) => clip.fadeAt(t),
         onProgress: (p) => { if (shareProgress) shareProgress.textContent = `${Math.round(p * 100)}%`; },
       });
-      clip.dispose();
-      generating = false;
       showSharePreview(blob, node);
     } catch (e) {
       console.error("clip encode failed", e);
-      clip.dispose();
-      generating = false;
       closeShareModal();
+    } finally {
+      setCaptureResolution(false); // ライブ表示の解像度へ復帰
+      clip.dispose();              // カメラ/コントロールを復帰
+      generating = false;
     }
   }
 

@@ -47,7 +47,7 @@ async function pickAvcCodec(width: number, height: number, fps: number): Promise
   const candidates = ["avc1.4D0028", "avc1.640028", "avc1.42E028", "avc1.4D0020"];
   for (const codec of candidates) {
     try {
-      const res = await VideoEncoder.isConfigSupported({ codec, width, height, bitrate: VIDEO_BITRATE, framerate: fps });
+      const res = await VideoEncoder.isConfigSupported({ codec, width, height, bitrate: VIDEO_BITRATE, framerate: fps, latencyMode: "realtime" });
       if (res.supported) return codec;
     } catch { /* try next */ }
   }
@@ -172,7 +172,8 @@ export async function encodeClip(opts: EncodeOptions): Promise<Blob> {
     error: (e) => { encodeError = e; },
   });
   const codec = await pickAvcCodec(width, height, fps);
-  videoEncoder.configure({ codec, width, height, bitrate: VIDEO_BITRATE, framerate: fps });
+  // latencyMode:"realtime" でエンコードを高速化（速いプリセット。7秒クリップなら画質影響は軽微）
+  videoEncoder.configure({ codec, width, height, bitrate: VIDEO_BITRATE, framerate: fps, latencyMode: "realtime" });
 
   const frameDurUs = 1e6 / fps;
   const keyEvery = Math.max(1, Math.round(KEY_INTERVAL_SEC * fps));

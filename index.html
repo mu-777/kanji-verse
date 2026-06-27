@@ -328,7 +328,9 @@
     </script>
   </head>
   <body>
-    <h1 class="sr-only">Kanji-Verse — an interactive 3D map of ~2,800 Japanese kanji (Jōyō &amp; Jinmeiyō) arranged by meaning</h1>
+    <!-- H1 は <title> と完全一致させる（Google のタイトル書き換え抑止: H1=title でリンクタイトルが尊重されやすい）。
+         Jōyō/Jinmeiyō・AI embeddings 等の説明キーワードは <noscript> と JSON-LD が担保する。 -->
+    <h1 class="sr-only">Kanji-Verse — explore ~2,800 Japanese kanji arranged by meaning in 3D</h1>
     <noscript>
       <div style="max-width: 640px; margin: 12vh auto 0; padding: 0 24px; text-align: center; color: #cdd6ff; font-family: sans-serif; line-height: 1.8;">
         <p style="font-size: 18px;">Kanji-Verse is an interactive 3D visualization of about 2,800 Japanese kanji — the 2,136 Jōyō and 649 Jinmeiyō characters — arranged by meaning using AI embeddings, so characters with similar meanings cluster together in space.</p>
