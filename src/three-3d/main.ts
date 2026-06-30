@@ -115,9 +115,30 @@ async function main() {
   if (!demo) {
     const welcome = document.getElementById("welcome")!;
     welcome.style.display = "flex";
+
+    // sound=on で welcome を表示している間、最初のユーザージェスチャで BGM を鳴らし始める。
+    // オートプレイ規制でジェスチャ前には音を出せないが、pref=on の再訪では setEnabled が未呼び出し
+    // のままなので、従来は Explore を押すまで無音だった。welcome 上の最初のクリック/キー/タップで
+    // 開始することで「Explore を押す前から」鳴らす。welcome の sound トグルで OFF→ON にした経路は
+    // 元々その click で再生されるため、ここは「最初から ON のまま触れていない」経路を埋める。
+    const teardownEarly = () => {
+      window.removeEventListener("pointerdown", startAudioEarly);
+      window.removeEventListener("keydown", startAudioEarly);
+      window.removeEventListener("touchstart", startAudioEarly);
+    };
+    function startAudioEarly() {
+      teardownEarly();
+      if (audio.isEnabled()) audio.setEnabled(true);
+    }
+    if (audio.isEnabled()) {
+      window.addEventListener("pointerdown", startAudioEarly);
+      window.addEventListener("keydown", startAudioEarly);
+      window.addEventListener("touchstart", startAudioEarly);
+    }
+
     const dismiss = () => {
-      // welcome の dismiss はユーザージェスチャ。ON 設定済みなら、ここで再生を開始する
-      // （オートプレイ規制対策。再訪で pref=on のときもこのクリックで鳴り始める）。
+      // welcome の dismiss はユーザージェスチャ。早期開始が走っていなくてもここで確実に再生する。
+      teardownEarly();
       if (audio.isEnabled()) audio.setEnabled(true);
       welcome.classList.add("hidden");
       welcome.addEventListener("transitionend", () => {
